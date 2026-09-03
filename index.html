@@ -51,6 +51,15 @@
   }
   #mobmenu{position:fixed;right:10px;bottom:calc(26px + env(safe-area-inset-bottom));display:none;flex-direction:column;gap:6px;z-index:4}
   #mobmenu .pill{background:rgba(255,255,255,.9)}
+  #planOv{position:fixed;inset:0;background:rgba(20,24,30,.55);z-index:20;overflow:auto;padding:16px;box-sizing:border-box}
+  #planBox{background:#fff;color:#1d2126;max-width:900px;margin:0 auto;border-radius:12px;padding:12px 16px 20px;position:relative}
+  #planX{position:sticky;top:0;float:left;margin:0 0 6px 0;background:#fff}
+  #planBody svg{width:100%;height:auto;display:block}
+  #planBody h3{font-size:16px;margin:12px 0 6px}
+  #planBody table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+  #planBody th,#planBody td{border:1px solid #c9d1dc;padding:4px 8px;text-align:right}
+  #planBody th{background:#eef2f9}
+  #planBody p{font-size:13px;color:#5b6472;margin:8px 0 0}
 </style>
 </head>
 <body>
@@ -82,6 +91,7 @@
     <button class="btn" id="tLab" aria-pressed="true">الأسماء والمقاسات</button>
     <button class="btn" id="tSun" aria-pressed="false">شمس العصر</button>
     <button class="btn" id="tCols" aria-pressed="false">العمدان بالأحمر</button>
+    <button class="btn" id="tPlan">مسقط العمدان 2D</button>
   </div>
   <details open><summary>مساحات الشقة</summary><table id="areas"></table></details>
   <p style="margin-top:6px;font-size:12px">الطوابق: مخزن ٣.٧٥ م × ٢ · شقق ٣.٠٠ م × ٢ · كل المقاسات من الرسم الـ 2D نفسه.</p>
@@ -91,6 +101,7 @@
 <div id="hud" hidden></div>
 <div id="cross"></div>
 <div id="joy"><div id="knob"></div></div>
+<div id="planOv" hidden><div id="planBox"><button class="pill" id="planX">✕ اقفل</button><div id="planBody"></div></div></div>
 <div id="mobmenu">
   <button class="pill" id="mobExit">🔄 اخرج</button>
 </div>
@@ -699,6 +710,38 @@ function setMode(m){ mode=m; document.getElementById('mWalk').setAttribute('aria
 document.getElementById('mWalk').addEventListener('click',()=>{ if(mode!=='walk'){ setMode('walk'); if(player.z===0&&!inside([player.x,player.y],SH.BLD)&&player.y<0){} } });
 document.getElementById('mOrbit').addEventListener('click',()=>setMode('orbit'));
 document.getElementById('mobExit').addEventListener('click',()=>setMode('orbit'));
+
+// ---------------- 2D column plan overlay ----------------
+function colPlanSVG(P){
+  const sc=52, ox=60, oy=40; const X=x=>ox+(x+12.5)*sc, Y=y=>oy+(17.6-y)*sc;
+  const pts=poly=>poly.map(([a,b])=>`${X(a).toFixed(1)},${Y(b).toFixed(1)}`).join(' ');
+  const CORE=SH.CORE, BLD=SH.BLD;
+  const cols=P.cols_out.concat(P.cols_in.map(c=>[c[0],c[1],0.4,0.4,0])).slice().sort((a,b)=>(Math.round(a[1])-Math.round(b[1]))||(a[0]-b[0]));
+  const isIn=c=>P.cols_in.some(q=>Math.abs(q[0]-c[0])<0.01&&Math.abs(q[1]-c[1])<0.01);
+  const isCore=c=>CORE.some(q=>Math.abs(q[0]-c[0])<0.02&&Math.abs(q[1]-c[1])<0.02);
+  const kindOf=c=>{ const [x,y]=c; if(isIn(c)) return 'جوه المخزن'; if(isCore(c)) return 'ركن بيت السلم';
+    if(Math.abs(x-SH.A[0])<0.02&&Math.abs(y-SH.A[1])<0.02) return 'ركن الواجهة والجار الشمال'; if(Math.abs(x-SH.D2[0])<0.02&&Math.abs(y-SH.D2[1])<0.02) return 'ركن الشارعين'; if(Math.abs(x-SH.B2[0])<0.02&&Math.abs(y-SH.B2[1])<0.02) return 'ركن الجارين';
+    if(Math.abs(y-5.85)<0.05) return 'في الواجهة'; if(Math.abs(x-lw(y))<0.06) return 'في حيطة الجار الشمال'; if(Math.abs(x-rw(y))<0.06) return 'على شارع الـ ٦'; return 'في حيطة الجار (فوق)'; };
+  let o=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1010" font-family="Cairo, Geeza Pro, Arial" direction="rtl">`,`<rect width="900" height="1010" fill="#fff"/>`];
+  o.push(`<text x="450" y="28" text-anchor="middle" font-size="22" font-weight="700" fill="#1d2126">عمدان ${P.title.split(':')[0].replace('اقتراح','ترشيح')}: الدور الأول (المخزن) — ${ar(cols.length,0)} عمود</text>`);
+  o.push(`<polygon points="${pts(SH.LAND)}" fill="#f4f1ea" stroke="#b9bec7"/>`,`<polygon points="${pts(BLD)}" fill="#fff" stroke="#1d2126" stroke-width="3"/>`,`<polygon points="${pts(CORE)}" fill="#e6f2f2" stroke="#2A6F6F" stroke-width="2"/>`);
+  o.push(`<text x="${X(-2.2)}" y="${Y(13.6)}" text-anchor="middle" font-size="13" fill="#2A6F6F">بيت السلم ٣ × ٥</text>`);
+  o.push(`<line x1="${X(P.whdoor[0])}" y1="${Y(5.85)}" x2="${X(P.whdoor[1])}" y2="${Y(5.85)}" stroke="#B3261E" stroke-width="8" stroke-dasharray="14 7"/>`,`<text x="${X((P.whdoor[0]+P.whdoor[1])/2)}" y="${Y(5.85)+24}" text-anchor="middle" font-size="13" fill="#B3261E">باب المخزن ٤.٥ م</text>`);
+  o.push(`<text x="${X(-6.5)}" y="${Y(-0.6)}" text-anchor="middle" font-size="15" fill="#3a414b">شارع ١٢ م</text>`,`<text x="${X(2.6)}" y="${Y(9)}" text-anchor="middle" font-size="15" fill="#3a414b" transform="rotate(-76 ${X(2.6)} ${Y(9)})">شارع ٦ م</text>`,`<text x="${X(-13.2)}" y="${Y(11)}" text-anchor="middle" font-size="13" fill="#5b6472" transform="rotate(-77 ${X(-13.2)} ${Y(11)})">الجار</text>`,`<text x="${X(-4)}" y="${Y(17.3)}" text-anchor="middle" font-size="13" fill="#5b6472">الجار</text>`);
+  const rows=[]; let nIn=0,nCore=0,nWall=0;
+  cols.forEach((c,i)=>{ const [x,y,w,h,ang]=c; const W=w*sc*1.25,H=h*sc*1.25; const fill=isIn(c)?'#B3261E':(isCore(c)?'#2A6F6F':'#1F5FBF'); if(isIn(c))nIn++; else if(isCore(c))nCore++; else nWall++;
+    o.push(`<rect x="${(X(x)-W/2).toFixed(1)}" y="${(Y(y)-H/2).toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${fill}" transform="rotate(${(-ang*180/Math.PI).toFixed(1)} ${X(x).toFixed(1)} ${Y(y).toFixed(1)})"/>`);
+    o.push(`<circle cx="${(X(x)+18).toFixed(1)}" cy="${(Y(y)-18).toFixed(1)}" r="11" fill="#fff" stroke="${fill}" stroke-width="1.5"/><text x="${(X(x)+18).toFixed(1)}" y="${(Y(y)-13).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="${fill}">${ar(i+1,0)}</text>`);
+    rows.push(`<tr><td>${ar(i+1,0)}</td><td>${kindOf(c)}</td><td>${w===0.4?'٤٠ × ٤٠':'٢٥ × ٧٠'}</td><td>${ar(Math.max(0,y-5.85))}</td><td>${ar(Math.max(0,x-lw(y)))}</td></tr>`); });
+  const ly=Y(-1.6)+8;
+  o.push(`<rect x="60" y="${ly}" width="780" height="60" fill="#f7f8fa" stroke="#d5d9e0"/>`,`<rect x="770" y="${ly+14}" width="30" height="12" fill="#1F5FBF"/><text x="760" y="${ly+25}" text-anchor="end" font-size="13">أزرق: عمود ٢٥ × ٧٠ مخفي في سمك الحيطة الخارجية (${ar(nWall,0)})</text>`,`<rect x="440" y="${ly+14}" width="16" height="16" fill="#2A6F6F"/><text x="430" y="${ly+27}" text-anchor="end" font-size="13">تركواز: ركن بيت السلم ٤٠ × ٤٠ (${ar(nCore,0)})</text>`);
+  o.push(nIn?`<rect x="770" y="${ly+36}" width="16" height="16" fill="#B3261E"/><text x="760" y="${ly+49}" text-anchor="end" font-size="13">أحمر: العمود الوحيد جوه المخزن ٤٠ × ٤٠ — على ٣.٤ م من الواجهة و ٥.٧ م من الجار الشمال</text>`:`<text x="760" y="${ly+49}" text-anchor="end" font-size="13" fill="#B3261E">مفيش عمود جوه المخزن — كمرات تحويل ٣٠ × ١٠٠ تحت حيطان الشقة</text>`);
+  o.push('</svg>');
+  return o.join('')+`<h3>مكان كل عمود (بالمتر: من الواجهة على شارع الـ ١٢ ومن حيطة الجار الشمال)</h3><table><tr><th>#</th><th>فين</th><th>المقاس (سم)</th><th>بعده عن الواجهة</th><th>بعده عن الجار الشمال</th></tr>${rows.join('')}</table><p>الأعمدة الزرقا والتركواز مخفية جوه الحيطان فمش بتاخد مساحة من المخزن. في الشقق فوق نفس الأعمدة بتكمل بمقاس أصغر (٢٥ × ٦٠ و ٣٠ × ٣٠).</p>`;
+}
+const planOv=document.getElementById('planOv'); document.getElementById('tPlan').addEventListener('click',()=>{ document.getElementById('planBody').innerHTML=colPlanSVG(D.plans[cur]); planOv.hidden=false; });
+document.getElementById('planX').addEventListener('click',()=>planOv.hidden=true); planOv.addEventListener('click',e=>{ if(e.target===planOv) planOv.hidden=true; });
+addEventListener('keydown',e=>{ if(e.code==='Escape') planOv.hidden=true; });
 
 // ---------------- loop ----------------
 const clock=new THREE.Clock(); let frameN=0;
