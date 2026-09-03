@@ -90,7 +90,7 @@
     <button class="btn" id="tFurn" aria-pressed="true">الفرش</button>
     <button class="btn" id="tLab" aria-pressed="true">الأسماء والمقاسات</button>
     <button class="btn" id="tSun" aria-pressed="false">شمس العصر</button>
-    <button class="btn" id="tCols" aria-pressed="false">العمدان بالأحمر</button>
+    <button class="btn" id="tCols" aria-pressed="true">ألوان العمدان</button>
     <button class="btn" id="tPlan">مسقط العمدان 2D</button>
   </div>
   <details open><summary>مساحات الشقة</summary><table id="areas"></table></details>
@@ -362,7 +362,7 @@ const site=new THREE.Group(); scene.add(site);
 })();
 
 // ---------------- building (per proposal) ----------------
-let bld=null; let cur=1; let furnOn=true, labOn=true, colsOn=false;
+let bld=null; let cur=1; let furnOn=true, labOn=true, colsOn=true;
 const walkMats=[]; // not used
 function build(k){
   if(bld){ scene.remove(bld); bld.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); }
@@ -454,10 +454,12 @@ function build(k){
   // ---- interior columns (warehouse floors 40x40, flats 30x30) ----
   for(const c of P.cols_in){ for(const [z,h,s,lv] of [[0,H_WH,0.4,0],[LV.f2,H_WH,0.4,1],[LV.f3,H_FL,0.3,2],[LV.f4,H_FL,0.3,3]]){ const m=box(s,h,s,M.plaster,c[0],-c[1],z+h/2,0); m.userData.lv=lv; bld.add(m); if(lv<2) for(const [p,q] of [[[c[0]-s/2,c[1]-s/2],[c[0]+s/2,c[1]-s/2]],[[c[0]+s/2,c[1]-s/2],[c[0]+s/2,c[1]+s/2]],[[c[0]+s/2,c[1]+s/2],[c[0]-s/2,c[1]+s/2]],[[c[0]-s/2,c[1]+s/2],[c[0]-s/2,c[1]-s/2]]]) addCol(p,q,z,z+h); } }
   // highlighted columns: every column of the proposal, in red, poking 3 cm out of the walls (toggle)
-  { const red=new THREE.MeshStandardMaterial({color:0xD5312A,emissive:0x4a0803,roughness:0.6});
-    for(const [x,y,w,h,ang] of P.cols_out.concat(P.cols_in.map(c=>[c[0],c[1],0.4,0.4,0]))){
+  { const red=new THREE.MeshStandardMaterial({color:0xD5312A,emissive:0x4a0803,roughness:0.6}), blue=new THREE.MeshStandardMaterial({color:0x1F5FBF,emissive:0x0a2450,roughness:0.6}), teal=new THREE.MeshStandardMaterial({color:0x2A8C8C,emissive:0x0b3030,roughness:0.6});
+    const isCoreC=(x,y)=>SH.CORE.some(q=>Math.abs(q[0]-x)<0.02&&Math.abs(q[1]-y)<0.02);
+    for(const [x,y,w,h,ang,inner] of P.cols_out.map(c=>[...c,false]).concat(P.cols_in.map(c=>[c[0],c[1],0.4,0.4,0,true]))){
+      const mat=inner?red:(isCoreC(x,y)?teal:blue);
       for(const [z,hh,lv,shrink] of [[0,H_WH,0,0],[LV.f2,H_WH,1,0],[LV.f3,H_FL,2,0.1],[LV.f4,H_FL,3,0.1]]){
-        const ww=Math.max(0.3,w-shrink)+0.06, hh2=Math.max(0.3,h-shrink)+0.06; const m=box(ww,hh+0.3,hh2,red,x,-y,z+hh/2,ang); m.userData.lv=lv; m.userData.colhl=true; m.visible=colsOn; bld.add(m); } } }
+        const ww=Math.max(0.3,w-shrink)+0.06, hh2=Math.max(0.3,h-shrink)+0.06; const m=box(ww,hh+0.3,hh2,mat,x,-y,z+hh/2,ang); m.userData.lv=lv; m.userData.colhl=true; m.visible=colsOn; bld.add(m); } } }
   // transfer beams (proposal 1) shown under the flats' walls: three deep beams in the floor-3 slab zone
   if(P.transfer){ for(const [a,b] of P.tbeams){ const L=Math.hypot(b[0]-a[0],b[1]-a[1]); const m=box(L,0.85,0.3,M.concrete,(a[0]+b[0])/2,-(a[1]+b[1])/2,LV.f3-SLAB-0.425,Math.atan2(b[1]-a[1],b[0]-a[0])); m.userData.lv=1; bld.add(m); } }
   else { for(const c of P.cols_in){ /* ordinary beams: a 25x60 beam line from the interior column to the front and to the left wall */
@@ -769,7 +771,7 @@ function frame(){
   requestAnimationFrame(frame);
 }
 const U=new URLSearchParams(location.search);
-if(U.get('cols')==='1'){ colsOn=true; tC.setAttribute('aria-pressed','true'); }
+if(U.get('cols')==='0'){ colsOn=false; tC.setAttribute('aria-pressed','false'); }
 if(U.get('furn')==='0'){ furnOn=false; tF.setAttribute('aria-pressed','false'); }
 selectProp(Math.min(6,Math.max(1,+(U.get('p')||1)))); setMode('orbit');
 if(U.has('f')){ floorSel=+U.get('f'); floorsEl.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v==String(floorSel)))); }
