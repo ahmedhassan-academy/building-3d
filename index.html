@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>عمارة المخزن والشقتين — الخمس ترشيحات</title>
+<title>عمارة المخزن والشقتين — الترشيحات</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
 <style>
   :root{--bg:#EEF1F5;--panel:rgba(255,255,255,.92);--ink:#1D2026;--ink2:#5B6270;--line:#D5D9E0;--accent:#1F5FBF;--accent-ink:#fff;--chip:#E8ECF2}
@@ -442,7 +442,7 @@ function build(k){
   // ---- interior columns (warehouse floors 40x40, flats 30x30) ----
   for(const c of P.cols_in){ for(const [z,h,s,lv] of [[0,H_WH,0.4,0],[LV.f2,H_WH,0.4,1],[LV.f3,H_FL,0.3,2],[LV.f4,H_FL,0.3,3]]){ const m=box(s,h,s,M.plaster,c[0],-c[1],z+h/2,0); m.userData.lv=lv; bld.add(m); if(lv<2) for(const [p,q] of [[[c[0]-s/2,c[1]-s/2],[c[0]+s/2,c[1]-s/2]],[[c[0]+s/2,c[1]-s/2],[c[0]+s/2,c[1]+s/2]],[[c[0]+s/2,c[1]+s/2],[c[0]-s/2,c[1]+s/2]],[[c[0]-s/2,c[1]+s/2],[c[0]-s/2,c[1]-s/2]]]) addCol(p,q,z,z+h); } }
   // transfer beams (proposal 1) shown under the flats' walls: three deep beams in the floor-3 slab zone
-  if(P.transfer){ for(const [a,b] of [[[lw(9.5),9.5],[rw(9.5),9.5]],[[lw(12.6),12.6],P2],[[-6.9,5.85],[-6.9,tw(-6.9)]]]){ const L=Math.hypot(b[0]-a[0],b[1]-a[1]); const m=box(L,0.85,0.3,M.concrete,(a[0]+b[0])/2,-(a[1]+b[1])/2,LV.f3-SLAB-0.425,Math.atan2(b[1]-a[1],b[0]-a[0])); m.userData.lv=1; bld.add(m); } }
+  if(P.transfer){ for(const [a,b] of P.tbeams){ const L=Math.hypot(b[0]-a[0],b[1]-a[1]); const m=box(L,0.85,0.3,M.concrete,(a[0]+b[0])/2,-(a[1]+b[1])/2,LV.f3-SLAB-0.425,Math.atan2(b[1]-a[1],b[0]-a[0])); m.userData.lv=1; bld.add(m); } }
   else { for(const c of P.cols_in){ /* ordinary beams: a 25x60 beam line from the interior column to the front and to the left wall */
       for(const [a,b] of [[[c[0],5.85],[c[0],tw(c[0])]],[[lw(c[1]),c[1]],[rw(c[1]),c[1]]]]){ const L=Math.hypot(b[0]-a[0],b[1]-a[1]); for(const [z,lv] of [[LV.f2,1],[LV.f3,2]]){ const m=box(L,0.45,0.25,M.plaster,(a[0]+b[0])/2,-(a[1]+b[1])/2,z-SLAB-0.225,Math.atan2(b[1]-a[1],b[0]-a[0])); m.userData.lv=lv-1; bld.add(m);} } } }
   // ---- warehouse straight stair (parallel to the left neighbour wall) ----
@@ -669,7 +669,7 @@ function updateHUD(){ if(mode!=='walk'){ hud.hidden=true; return; } hud.hidden=f
   hud.innerHTML=`<b>إنت في:</b> ${roomAt()}${look?`<small>${look}</small>`:''}`; }
 
 // ---------------- UI ----------------
-const propsEl=document.getElementById('props'); for(let k=1;k<=5;k++){ const b=document.createElement('button'); b.className='pill'; b.textContent='ترشيح '+ar(k,0); b.dataset.k=k; b.setAttribute('aria-pressed',k===1?'true':'false'); b.addEventListener('click',()=>selectProp(k)); propsEl.appendChild(b); }
+const propsEl=document.getElementById('props'); for(let k=1;k<=6;k++){ const b=document.createElement('button'); b.className='pill'; b.textContent='ترشيح '+ar(k,0); b.dataset.k=k; b.setAttribute('aria-pressed',k===1?'true':'false'); b.addEventListener('click',()=>selectProp(k)); propsEl.appendChild(b); }
 const FLOORS=[['الشارع',0],['الأرضي','g'],['الدور ٢',1],['الدور ٣',2],['الدور ٤',3],['السطح',4]];
 const floorsEl=document.getElementById('floors'); FLOORS.forEach(([t,v])=>{ const b=document.createElement('button'); b.className='pill'; b.textContent=t; b.dataset.v=v; b.addEventListener('click',()=>{ if(mode==='walk'){ teleport(v); } else { floorSel=(v==='g'||v===0)?0:v; applyVisibility(); setView(floorSel>=4?null:'top'); } floorsEl.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); }); floorsEl.appendChild(b); });
 function selectProp(k){ cur=k; propsEl.querySelectorAll('.pill').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===k))); build(k); const P=D.plans[k];
