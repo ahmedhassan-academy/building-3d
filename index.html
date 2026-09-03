@@ -97,7 +97,7 @@
   <p style="margin-top:6px;font-size:12px">الطوابق: مخزن ٣.٧٥ م × ٢ · شقق ٣.٠٠ م × ٢ · كل المقاسات من الرسم الـ 2D نفسه.</p>
 </aside>
 
-<div id="hint"><button id="hintX" aria-label="إخفاء">✕</button><span id="hintT">اسحب علشان تلف · عجلة الماوس أو أصبعين للتقريب · اختار ترشيح فوق.</span></div>
+<div id="hint"><button id="hintX" aria-label="إخفاء">✕</button><span id="hintT">الأعمدة ملوّنة والحيطان شفافة عشان تشوفها: أحمر جوه المخزن · أزرق في الحيطان · تركواز عند السلم. زرار «ألوان العمدان» يرجّع الحيطان عادية.</span></div>
 <div id="hud" hidden></div>
 <div id="cross"></div>
 <div id="joy"><div id="knob"></div></div>
@@ -261,7 +261,7 @@ function wall(a,b,t,z0,h,openings,mats,inward,offset,lv){
   const off=offset?[inw[0]*t/2,inw[1]*t/2]:[0,0];
   const grp=new THREE.Group();
   const seg=(u0,u1,zz0,zz1)=>{ if(u1-u0<0.01||zz1-zz0<0.01) return; const cx=a[0]+ux*(u0+u1)/2+off[0], cy=a[1]+uy*(u0+u1)/2+off[1];
-    const m=box(u1-u0,zz1-zz0,t,arr,cx,-cy,z0+(zz0+zz1)/2,rot); m.userData.lv=lv; grp.add(m); };
+    const m=box(u1-u0,zz1-zz0,t,arr,cx,-cy,z0+(zz0+zz1)/2,rot); m.userData.lv=lv; m.userData.wallm=true; m.userData.orig=m.material; grp.add(m); };
   const ops=[...(openings||[])].sort((p,q)=>p.u0-q.u0); let u=0;
   for(const o of ops){ const o0=Math.max(0,Math.min(L,o.u0)),o1=Math.max(0,Math.min(L,o.u1));
     seg(u,o0,0,h); addCol([a[0]+ux*u,a[1]+uy*u],[a[0]+ux*o0,a[1]+uy*o0],z0,z0+h);
@@ -615,12 +615,14 @@ function furnish(P,z,lv){
 
 // ---------------- visibility (floor cut-away, furniture, labels) ----------------
 let mode='orbit', floorSel=4; // 0..4 (4 = roof = everything)
+const GHOST=new THREE.MeshStandardMaterial({color:0xE9EDF3,transparent:true,opacity:0.22,depthWrite:false,roughness:0.9});
 function applyVisibility(){
-  const cut=mode==='orbit'?floorSel:4;
+  const cut=mode==='orbit'?floorSel:4; const xray=colsOn&&mode==='orbit';
   bld.traverse(o=>{ const lv=o.userData.lv; if(lv===undefined) return;
     let v=lv<=cut; if(o.userData.furn!==undefined&&!furnOn) v=false; if(o.userData.label){ v=labOn&&mode==='orbit'&&floorSel<4&&lv===floorSel; }
     if(o.userData.light) v = mode==='walk' && lv===lvOf(player.z+0.2);
     if(o.userData.colhl) v = v && colsOn;
+    if(o.userData.wallm){ o.material = xray ? GHOST : o.userData.orig; o.castShadow = !xray; }
     o.visible=v; });
   for(const f of FURN) f.visible=furnOn&&(f.userData.lv<=cut);
   document.getElementById('cross').style.display=(mode==='walk'&&!isMobile)?'block':'none';
@@ -707,7 +709,7 @@ function setMode(m){ mode=m; document.getElementById('mWalk').setAttribute('aria
   const side=document.getElementById('side'); side.classList.toggle('walk',m==='walk'); joy.style.display=(m==='walk'&&isMobile)?'block':'none'; document.getElementById('mobmenu').style.display=(m==='walk'&&isMobile)?'flex':'none';
   orbit.enabled=(m==='orbit'); document.getElementById('hint').hidden=false;
   if(m==='walk'){ hintT.textContent=isMobile?'الدايرة الشمال للمشي · اسحب على يمين الشاشة علشان تبص · دوس على أي باب يفتح أو يقفل · الزراير فوق تنقلك لأي دور.':'امشي بالأسهم أو W A S D · حرّك الماوس علشان تبص (دوس على الشاشة الأول) · دوس على أي باب يفتح أو يقفل · Shift يجري · الزراير فوق تنقلك لأي دور.'; if(labOn){ labOn=false; tL.setAttribute('aria-pressed','false'); } }
-  else { hintT.textContent='اسحب علشان تلف · عجلة الماوس أو أصبعين للتقريب · زراير الأدوار بتقطع العمارة عشان تشوف الدور من فوق.'; if(document.pointerLockElement) document.exitPointerLock(); if(!labOn){ labOn=true; tL.setAttribute('aria-pressed','true'); } }
+  else { hintT.textContent='الأعمدة ملوّنة والحيطان شفافة عشان تشوفها: أحمر جوه المخزن · أزرق في الحيطان · تركواز عند السلم. زرار «ألوان العمدان» يرجّع الحيطان عادية.'; if(document.pointerLockElement) document.exitPointerLock(); if(!labOn){ labOn=true; tL.setAttribute('aria-pressed','true'); } }
   applyVisibility(); }
 document.getElementById('mWalk').addEventListener('click',()=>{ if(mode!=='walk'){ setMode('walk'); if(player.z===0&&!inside([player.x,player.y],SH.BLD)&&player.y<0){} } });
 document.getElementById('mOrbit').addEventListener('click',()=>setMode('orbit'));
