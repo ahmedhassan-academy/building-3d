@@ -232,6 +232,14 @@ def is_core_corner(x,y): return any(abs(x-q[0])<0.02 and abs(y-q[1])<0.02 for q 
 def site(F):
     return [poly(F,LAND,fill='#f4f1ea',stroke='#c9ccd2',sw=0.6),poly(F,STRIP1,fill='#f9efe9',stroke='#e0c9bd',sw=0.5),poly(F,STRIP2,fill='#fbf5e3',stroke='#e6d7a8',sw=0.5)]
 def dims(F,fl,side=0):
+    if fl>=2 and side:                 # floors with both projections: the real lengths of the four outer walls
+        fr,c3=(rw2(4.05,side),4.05),sh(C2,side); L=lambda a,b: math.hypot(b[0]-a[0],b[1]-a[1])
+        t12,t6,tl,tr=fr[0]-XL,L(fr,c3),L((XL,4.05),B2),L(B2,c3)
+        o=[text(F,f'الواجهة {ar(t12,2)} م — شارع ١٢ م',(A[0]+D2[0])/2,3.35,cls='t')]
+        o.append(text(F,f'≈ {ar(t6,2)} م — شارع ٦ م',*sh(mid(D2,C2,0.75,-0.15),side),cls='t',rot=rot_along(D2,C2)))
+        o.append(text(F,f'الجار الشمال — {ar(tl,2)} م',*mid(A,B2,-0.6,0),cls='t',rot=rot_along(A,B2)))
+        o.append(text(F,f'الجار — ≈ {ar(tr,2)} م',*mid(B2,C2,0,0.55),cls='t',rot=rot_along(B2,C2)))
+        return o
     o=[text(F,'الواجهة ١٠.٥٠ م — شارع ١٢ م',(A[0]+D2[0])/2,3.35 if fl>=2 else 5.2,cls='t')]
     o.append(text(F,'≈ ٨.٨٥ م — شارع ٦ م',*sh(mid(D2,C2,0.75,-0.15),side),cls='t',rot=rot_along(D2,C2)))
     o.append(text(F,'الجار الشمال — ١١.٤٠ م',*mid(A,B2,-0.6,0),cls='t',rot=rot_along(A,B2)))
