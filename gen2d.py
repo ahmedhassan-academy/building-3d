@@ -324,6 +324,9 @@ def flat_svg(plan,fl):
             o.append(text(F,r['n'],cx,cy,cls='t',dy=-7)); o.append(text(F,f"{r.get('dim') or ar(r['w'])+' × '+ar(r['h'])} ≈ {ar(r['a'],0)} م²",cx,cy,cls='ts',dy=8))
         else: o.append(text(F,r['n'],cx,cy,cls='ts'))
     for t in plan.get('extra_labels',[]): o.append(text(F,t['t'],t['x'],t['y'],cls='ts',rot=t.get('rot')))
+    if plan.get('outline3'):           # where the facade used to be: everything in front of it is taken over the street strip
+        o.append(line(F,A,D2,'#B3261E',2.2,dash='8 5'))
+        o.append(f'<text x="{F.X(-10.75):.1f}" y="{F.Y(6.12):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:9px;font-weight:700">خط الواجهة القديم</text>')
     o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 
 NT,TR,NR,RISE,SW=21,0.27,22,3.75,1.2
@@ -419,6 +422,9 @@ def build(k):
     bd=pl.get('balc_d',1.8); bal=' و '.join(f'{ar(x2-x1)} × {ar(bd,2)}' for x1,x2 in pl['balc'])
     if small: tr+=f'<tr><td>{" + ".join(dict.fromkeys(r["n"] for r in small))}</td><td class="n">—</td><td class="n">{ar(sum(r["a"] for r in small))}</td></tr>'
     tot=sum(r['a'] for r in rows); dw=pl['whdoor'][1]-pl['whdoor'][0]
+    taken=area([(XL,4.05),(XR,4.05),D2,A]); bd0=pl.get('balc_d',1.8)
+    tbal=sum((x2-x1)*bd0 for x1,x2 in pl['balc']) if pl.get('outline3') else 0
+    street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> ≈ {ar(taken,0)} م² في الدور، منهم ≈ {ar(taken-tbal,0)} م² أوض و {ar(tbal,1)} م² بلكونة' if pl.get('outline3') else '')
     def foot(i): return f'<div class="foot"><span>ترشيح {ar(k,0)}: {title} · {DATE}</span><span>صفحة {ar(i,0)} من {ar(N,0)}</span></div>'
     def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i,0)} من {ar(N,0)}</div></div>'
     pages=[]
@@ -444,7 +450,7 @@ def build(k):
     for fl in (3,4):
         pages.append(f'''<div class="page">{hdr(f'الدور {"الثالث" if fl==3 else "الرابع"}: شقة',pl['desc'],fl+1)}
 <div class="big">{flat_svg(pl,fl)}</div>
-<div class="fact"><b>الصافي:</b> ≈ {ar(tot,0)} م² · <b>الأبواب (برتقالي):</b> {ar(len(pl['leaves'])+1,0)} عادية (٠.٩٠ × ٢.١٠) + {ar(sum(1 for op in pl['front'] if op.get('k')!='win'),0)} منزلق · <b>البلكونات:</b> عرض {ar(bd,2)} م على شارع الـ ١٢ ·{"نفس تقسيم الدور الثالث بالظبط، الحمامات والمطابخ فوق بعض." if fl==4 else WELL_NOTE[k]}</div>
+<div class="fact"><b>الصافي:</b> ≈ {ar(tot,0)} م² · <b>الأبواب (برتقالي):</b> {ar(len(pl['leaves'])+1,0)} عادية (٠.٩٠ × ٢.١٠) + {ar(sum(1 for op in pl['front'] if op.get('k')!='win'),0)} منزلق · <b>البلكونات:</b> عرض {ar(bd,2)} م على شارع الـ ١٢ ·{"نفس تقسيم الدور الثالث بالظبط، الحمامات والمطابخ فوق بعض." if fl==4 else WELL_NOTE[k]}{street}</div>
 {foot(fl+1)}</div>''')
     pages.append(f'''<div class="page">{hdr('تفاصيل العمدان',f'ترشيح {ar(k,0)} · {sysname}',6)}
 <div class="small">{columns_svg(k)}</div>
