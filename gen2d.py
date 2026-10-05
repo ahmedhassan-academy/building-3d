@@ -78,10 +78,10 @@ def edit_p2(p):
     W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + ٣ × ٠.٨')
     for op in p['front']: op['y']=5.05                                                      # balcony doors sit on the new room fronts
     # balcony 2 goes (his ask): bedroom 2 comes out over it to the old balcony edge, with a 1.50 window in the new front
-    p['balc']=[[-11.6,-7.0]]; p['bays']=[[-11.6,-7.0,5.05],[-5.0,-2.0,4.05]]
-    R['نوم ٢']['p'][0:2]=[[-5.0,4.05],[-2.0,4.05]]
-    W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + ٣ × ١.٨')
-    p['front'][1].update(u0=7.87,u1=9.37,y=4.05,k='win')
+    p['balc']=[[-11.6,-7.0]]; p['bays']=[[-11.6,-7.0,5.05],[-5.0,-1.62,4.05]]                # bedroom 2 runs out right to the street corner
+    R['نوم ٢']['p']=[[-5.0,4.05],[-1.62,4.05]]+R['نوم ٢']['p'][3:]
+    W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + ٣.٤ × ١.٨')
+    p['front'][1].update(u0=8.06,u1=9.56,y=4.05,k='win')                                    # window centred on the new front
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
