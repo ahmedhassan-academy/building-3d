@@ -327,6 +327,12 @@ def flat_svg(plan,fl):
     if plan.get('outline3'):           # where the facade used to be: everything in front of it is taken over the street strip
         o.append(line(F,A,D2,'#B3261E',2.2,dash='8 5'))
         o.append(f'<text x="{F.X(-10.75):.1f}" y="{F.Y(6.12):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:9px;font-weight:700">خط الواجهة القديم</text>')
+        # how far we went out over the street, written next to the street corner: a red dimension 1.80 + the area per floor
+        taken=area([(XL,4.05),(XR,4.05),D2,A]); xd=-0.85
+        o.append(line(F,D2,(xd+0.2,5.85),'#B3261E',0.8,dash='3 2')); o.append(line(F,(XR,4.05),(xd+0.2,4.05),'#B3261E',0.8,dash='3 2'))
+        o.append(f'<line x1="{F.X(xd):.1f}" y1="{F.Y(5.85):.1f}" x2="{F.X(xd):.1f}" y2="{F.Y(4.05):.1f}" stroke="#B3261E" stroke-width="1.4" marker-start="url(#arw)" marker-end="url(#arw)"/>')
+        for t,y,sz in (('طلعنا من الشارع',5.25,10),(f'١.٨٠ م ≈ {ar(taken,0)} م²',4.75,11)):
+            o.append(f'<text x="{F.X(0.95):.1f}" y="{F.Y(y):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:{sz}px;font-weight:700">{t}</text>')
     o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 
 NT,TR,NR,RISE,SW=21,0.27,22,3.75,1.2
