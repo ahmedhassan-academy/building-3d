@@ -130,6 +130,8 @@ def edit_p2(p):
     for w in p['walls']:
         if w['a']==[-5.0,9.2] and w['b'][1]==9.2: w['b']=[rw2(9.2,d),9.2]                   # bedroom 2 | bedroom 3 wall runs out to the new wall
     p['front'][1].update(u0=7.95,u1=9.45)                                                   # bedroom 2's front window re-centred again
+    # labels: just length x width (his ask), the averaged sizes for the rooms with slanted walls
+    for n,dm in (('نوم ١','٦ × ٥.٢'),('نوم ٢','٥.٤ × ٥.٢'),('نوم ٣','٥.٧ × ٢.٨'),('صالة','٥ × ٣.٢'),('مطبخ','٣ × ٣.٣'),('حمام','٢.٥ × ١.٥')): W[n]['dim']=dm
     # the bedroom hall stops just past the doors of bedrooms 1 and 2 (y 7.7); the rest of it joins bedroom 2 (his ask)
     R['نوم ٢']['p']=[q for q in R['نوم ٢']['p'] if q not in ([-5.0,5.85],[-6.0,5.85])]+[[-5.0,7.7],[-6.0,7.7]]
     hl=R['هول']['p']; R['هول']['p']=[[-6.0,7.7] if q==[-6.0,5.85] else [-5.0,7.7] if q==[-5.0,5.85] else q for q in hl]
