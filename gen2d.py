@@ -162,6 +162,18 @@ def edit_open(p):
     R['هول']['p']=[[-6.0,7.7],[-5.0,7.7],[-5.0,9.2],[-6.0,9.2]]
     for n in ('صالة','هول'): W[n]['a']=area([T(q) for q in R[n]['p']])
     W['صالة']['dim']='٥.٨ × ٤.٢'; W['هول'].update(n='ممر',c=[-5.5,8.45],dim='١ × ١.٥'); p['extra_labels']=[]
+    # bedroom 3 grows to 20 m2 by taking from bedroom 2 (his ask): the wall between them moves from y 9.2 to y0;
+    # bedroom 2's door moves to the end of the passage (y 7.7)
+    d=p['side']; y0=9.2-0.7426
+    R['نوم ٣']['p']=[[-5.0,y0],[rw2(y0,d),y0],list(sh(P1,d)),[-5.0,CB5]]
+    R['نوم ٢']['p']=[[-6.0,4.05],[rw2(4.05,d),4.05],[rw2(y0,d),y0],[-5.0,y0],[-5.0,7.7],[-6.0,7.7]]
+    for n in ('نوم ٢','نوم ٣'): W[n]['a']=area([T(q) for q in R[n]['p']])
+    W['نوم ٣']['dim']='٥.٦ × ٣.٦'; W['نوم ٢']['dim']='٥.٤ × ٤.٥'
+    for w in p['walls']:
+        if w['a']==[-5.0,9.2] and w['b'][1]==9.2: w['a'],w['b']=[-5.0,y0],[rw2(y0,d),y0]          # bedroom 2 | bedroom 3
+        elif w['a']==[-5.0,7.7]: w['op']=[]                                                       # no door on the passage's side now
+        elif w['a']==[-6.0,7.7] and w['b']==[-5.0,7.7]: w['op']=[{'u0':0.05,'u1':0.95,'z0':0,'z1':2.1,'k':'door'}]   # door at the passage end
+    p['leaves']=[l for l in p['leaves'] if l['h']!=[-5.0,9.1]]+[{'h':[-5.95,7.7],'along':[1,0],'out':[0,-1],'w':0.9}]
     p['title']='اقتراح ٢ب: الصالة مفتوحة على المدخل والهول'
     p['desc']='زي ترشيح ٢ بالظبط، بس الصالة واخدة المدخل والهول من غير حيطان: الضيف بيدخل من باب الشقة على الصالة على طول، ونوم ٣ بتفتح عليها.'
 PLANS[7]=copy.deepcopy(PLANS[2]); edit_open(PLANS[7])
