@@ -67,6 +67,16 @@ def edit_p2(p):
                   {'h':[-5.0,9.1],'along':[0,-1],'out':[1,0],'w':0.9},                      # bedroom 2
                   {'h':[-5.0,11.4],'along':[0,-1],'out':[1,0],'w':0.9}]                     # bedroom 3
     p['front'][1].update(u0=7.22,u1=10.02)                                                  # bedroom 2's balcony door moves off the hall end
+    # balconies 1.0 deep instead of 1.80 (his ask); the back 0.80 of each balcony joins the bedroom behind it, so bedrooms 1 and 2
+    # come forward 0.80 m. Balcony 2 drops the 1.2 m that sat in front of the hall end (4.2 -> 3.0 long).
+    p['balc']=[[-11.6,-7.0],[-5.0,-2.0]]; p['balc_d']=1.0; p['balc_y0']=5.05
+    p['bays']=[[-11.6,-7.0,5.05],[-5.0,-2.0,5.05]]
+    b1,b2=R['نوم ١']['p'],R['نوم ٢']['p']
+    R['نوم ١']['p']=[b1[0],[-11.6,5.85],[-11.6,5.05],[-7.0,5.05],[-7.0,5.85]]+b1[1:]
+    R['نوم ٢']['p']=[[-5.0,5.05],[-2.0,5.05],[-2.0,5.85]]+b2[1:]
+    W['نوم ١'].update(a=area([T(q) for q in R['نوم ١']['p']]),dim='٥.٧ × ٣.٤ + ٤.٦ × ٠.٨')
+    W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + ٣ × ٠.٨')
+    for op in p['front']: op['y']=5.05                                                      # balcony doors sit on the new room fronts
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
@@ -170,8 +180,9 @@ def wall_lines(F,plan):
             elif k=='win': o.append(line(F,p,q,'#1F5FBF',1.5))
     return o
 def ring(F,plan,fl):
-    if fl>=3 and plan.get('bay'):
-        x0,x1,y=plan['bay']; out=[A,(x0,5.85),(x0,y),(x1,y),(x1,5.85),D2,C2,B2]
+    bays=plan.get('bays') or ([plan['bay']] if plan.get('bay') else [])
+    if fl>=3 and bays:                 # rooms that come forward of the 12 m facade
+        out=[A]+[q for x0,x1,y in sorted(bays) for q in ((x0,5.85),(x0,y),(x1,y),(x1,5.85))]+[D2,C2,B2]
     else: out=PROJ if fl==2 else BLD
     o=[poly(F,out,fill='none',stroke='#1d2126',sw=3)]
     if fl==2: o.append(line(F,A,D2,'#1d2126',1,dash='6 4'))
@@ -183,7 +194,7 @@ def ring(F,plan,fl):
     if fl==2:
         for x0,x1 in ((-11.2,-9.2),(-7.9,-5.9),(-4.6,-2.6)): o.append(win(F,(x0,4.05),(x1,4.05)))
     if fl>=3:
-        for op in plan['front']: o.append(slide(F,(A[0]+op['u0'],5.85),(A[0]+op['u1'],5.85)))
+        for op in plan['front']: o.append(slide(F,(A[0]+op['u0'],op.get('y',5.85)),(A[0]+op['u1'],op.get('y',5.85))))
         for op in plan['right']: o.append(win(F,upt(D2,C2,op['u0']),upt(D2,C2,op['u1'])))
     return o
 def core_svg(F,fl,plan):
@@ -256,12 +267,13 @@ def flat_svg(plan,fl):
     else: o.append(line(F,(-12.12,4.05),(-1.62,4.05),'#b9bec7',0.8,dash='3 2'))
     for r in plan['rooms']:
         fill,stroke=CLS.get(r['cls'],CLS['c-gray']); o.append(poly(F,[T(p) for p in r['p']],fill=fill,stroke=stroke,sw=0.8))
-    bd=plan.get('balc_d',1.8)
+    bd=plan.get('balc_d',1.8); by=plan.get('balc_y0',5.85)
     for x1,x2 in plan['balc']:
-        o.append(poly(F,[(x1,5.85),(x2,5.85),(x2,5.85-bd),(x1,5.85-bd)],fill='#ECEEF1',stroke='#1d2126',sw=1.6))
-        o.append(text(F,f'بلكونة {ar(x2-x1)} × {ar(bd,2)}',(x1+x2)/2,5.85-bd/2,cls='ts'))
-    if fl==3:
-        xs=[-12.12]+[x for b in plan['balc'] for x in b]+[-1.62]
+        o.append(poly(F,[(x1,by),(x2,by),(x2,by-bd),(x1,by-bd)],fill='#ECEEF1',stroke='#1d2126',sw=1.6))
+        o.append(text(F,f'بلكونة {ar(x2-x1)} × {ar(bd,2)}',(x1+x2)/2,by-bd/2,cls='ts'))
+    if fl==3:                          # label the open parts of the warehouse projection roof (not under a balcony or a room)
+        cov=sorted({tuple(b) for b in plan['balc']}|{(b[0],b[1]) for b in (plan.get('bays') or [])})
+        xs=[-12.12]+[x for b in cov for x in b]+[-1.62]
         for i in range(0,len(xs),2):
             if xs[i+1]-xs[i]>0.6: o.append(text(F,'سطح البروز',(xs[i]+xs[i+1])/2,4.95,cls='ts',fill='#8a8f99'))
     o+=wall_lines(F,plan); o+=ring(F,plan,fl); o+=core_svg(F,fl,plan); o+=columns(F,plan,fl)
@@ -382,8 +394,8 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · هول خاص للنوم عرضه ١ م من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · نوم ١ كبرت نص متر ونوم ٢ صغرت · البلكونات زي ما هي · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
-<p class="legend">{'البروز ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببروز مفتوح ١.٢٥ م، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · هول خاص للنوم عرضه ١ م من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · نوم ١ كبرت نص متر ونوم ٢ صغرت · البلكونتين عرضهم بقى ١ م والـ ٨٠ سم دخلوا في نوم ١ ونوم ٢، وبلكونة ٢ طولها بقى ٣ م · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
+<p class="legend">{'البلكونة ١ م وبروز الأوض ٨٠ سم والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
         pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {ar(k,0)} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
@@ -393,7 +405,7 @@ def build(k):
     for fl in (3,4):
         pages.append(f'''<div class="page">{hdr(f'الدور {"الثالث" if fl==3 else "الرابع"}: شقة',pl['desc'],fl+1)}
 <div class="big">{flat_svg(pl,fl)}</div>
-<div class="fact"><b>الصافي:</b> ≈ {ar(tot,0)} م² · <b>الأبواب (برتقالي):</b> {ar(len(pl['leaves'])+1,0)} عادية (٠.٩٠ × ٢.١٠) + {ar(len(pl['front']),0)} منزلق · <b>البلكونات:</b> ١.٨٠ م على شارع الـ ١٢ ·{"نفس تقسيم الدور الثالث بالظبط، الحمامات والمطابخ فوق بعض." if fl==4 else WELL_NOTE[k]}</div>
+<div class="fact"><b>الصافي:</b> ≈ {ar(tot,0)} م² · <b>الأبواب (برتقالي):</b> {ar(len(pl['leaves'])+1,0)} عادية (٠.٩٠ × ٢.١٠) + {ar(len(pl['front']),0)} منزلق · <b>البلكونات:</b> عرض {ar(bd,2)} م على شارع الـ ١٢ ·{"نفس تقسيم الدور الثالث بالظبط، الحمامات والمطابخ فوق بعض." if fl==4 else WELL_NOTE[k]}</div>
 {foot(fl+1)}</div>''')
     pages.append(f'''<div class="page">{hdr('تفاصيل العمدان',f'ترشيح {ar(k,0)} · {sysname}',6)}
 <div class="small">{columns_svg(k)}</div>
