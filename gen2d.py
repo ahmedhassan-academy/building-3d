@@ -144,6 +144,19 @@ def edit_p2(p):
             for op in w['op']: op['u0']-=1.74; op['u1']-=1.74
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
+# ---- proposal 2b (his ask, 5 Oct): proposal 2 with no wall between the entrance hall and the living room -> a reception guests walk straight into
+import copy
+def edit_open(p):
+    R={r['n']:r for r in p['rooms']}; W={r['n']:r for r in p['rows']}
+    R['صالة']['p']=[[-11.355,9.2],[-6.0,9.2],[-6.0,13.4],[-10.396,13.4]]                 # living + the old hall in front of kitchen and bath
+    R['هول']['p']=[[-6.0,7.7],[-5.0,7.7],[-5.0,12.73],[-4.784,13.712],[-5.384,13.712],[-5.384,13.4],[-6.0,13.4]]
+    for n in ('صالة','هول'): W[n]['a']=area([T(q) for q in R[n]['p']])
+    W['صالة'].update(n='صالة استقبال',dim='٤.٩ × ٤.٢',c=[-8.7,11.2]); W['هول']['c']=[-5.5,12.55]
+    p['walls']=[w for w in p['walls'] if not (w['a']==[-8.6,12.4] and w['b'] in ([-8.6,13.4],[-5.0,12.4]))]
+    p['leaves']=[l for l in p['leaves'] if l['h']!=[-6.95,12.4]]
+    p['title']='اقتراح ٢ب: الصالة مفتوحة على المدخل'
+    p['desc']='زي ترشيح ٢ بالظبط، بس من غير حيطة بين المدخل والصالة: الضيف بيدخل من باب الشقة على الصالة على طول.'
+PLANS[7]=copy.deepcopy(PLANS[2]); edit_open(PLANS[7])
 core=SH['core']; whst=SH['whst']
 U=T(core['U']); V=T(core['V'])
 def cp(s,t): return (P2[0]+U[0]*s+V[0]*t, P2[1]+U[1]*s+V[1]*t)
@@ -446,6 +459,7 @@ COLINFO={
 6:('نظام الكمرات المحوّلة','١٢ عمود: كلهم في الحيطان الخارجية وأركان بيت السلم على خطوط حيطان ترشيح ٢. صفر عمود جوه المخزن. ٣ كمرات تحويل ٣٠ × ١٠٠ سم في سقف الدور الثاني بتشيل حيطان الشقة.','عمدان الحيطان ٣٠ × ٨٠ في المخزن (حمل أكبر بسبب كمرات التحويل) وبتصغر لـ ٢٥ × ٦٠ في الشقق.'),
 }
 WELL_NOTE={1:'نوم ٢ على المنور',2:'الصالة من غير شباك',3:'نوم ٣ على المنور',4:'نوم ٣ على المنور',5:'الصالة من غير شباك',6:'الصالة من غير شباك'}
+COLINFO[7]=COLINFO[2]; WELL_NOTE[7]='الصالة مفتوحة على المدخل (استقبال)'
 CSS='''
 @page{size:A4;margin:12mm 12mm 14mm}
 html,body{margin:0;padding:0;background:#fff;color:#1d2126;font-family:"Geeza Pro","Al Nile","Noto Naskh Arabic","Arial",sans-serif;font-size:3.5mm;line-height:1.6}
@@ -465,7 +479,7 @@ h3{font-size:4.2mm;margin:4mm 0 2mm;font-weight:700;color:#1F5FBF}
 svg .t{font-size:11px;fill:#1d2126} svg .ts{font-size:9px;fill:#3a414b} svg .th{font-size:13px;font-weight:700;fill:#1d2126}
 '''
 def build(k):
-    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7
+    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7; KN={7:'٢ب'}.get(k,ar(k,0))
     rows=[r for r in pl['rows'] if r['n']!='منور']
     big=[r for r in rows if r['a']>=5]; small=[r for r in rows if r['a']<5]
     tr=''.join(f'<tr><td>{r["n"]}</td><td class="n">{r.get("dim") or ar(r["w"])+" × "+ar(r["h"])}</td><td class="n">{ar(r["a"])}</td></tr>' for r in big)
@@ -476,10 +490,10 @@ def build(k):
     tbal=sum((x2-x1)*bd0 for x1,x2 in pl['balc']) if pl.get('outline3') else 0
     sd_=pl.get('side',0); tside=area([(XR,4.05),(rw2(4.05,sd_),4.05),sh(C2,sd_),C2]) if sd_ else 0
     street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> من شارع ١٢ ≈ {ar(taken,0)} م² (منهم {ar(tbal,1)} م² بلكونة)'+(f' ومن شارع ٦ ≈ {ar(tside,0)} م²' if sd_ else '')+f' · المجموع ≈ {ar(taken+tside,0)} م² في الدور' if pl.get('outline3') else '')
-    def foot(i): return f'<div class="foot"><span>ترشيح {ar(k,0)}: {title} · {DATE}</span><span>صفحة {ar(i,0)} من {ar(N,0)}</span></div>'
+    def foot(i): return f'<div class="foot"><span>ترشيح {KN}: {title} · {DATE}</span><span>صفحة {ar(i,0)} من {ar(N,0)}</span></div>'
     def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i,0)} من {ar(N,0)}</div></div>'
     pages=[]
-    pages.append(f'''<div class="page">{hdr(f'ترشيح {ar(k,0)}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
+    pages.append(f'''<div class="page">{hdr(f'ترشيح {KN}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
 <div class="rules"><b>اللي في الملف ده:</b><ol>
 <li><b>الدور الأول (الأرضي):</b> مخزن فاضي ≈ {ar(G_AREA,0)} م²، باب رول {ar(dw)} م على شارع الـ ١٢، سلم داخلي للدور الثاني، ومجرى مواسير ٤٠ × ٦٠ في الضهر. مفيش منور.</li>
 <li><b>الدور الثاني:</b> مخزن كامل ≈ {ar(f2_area(pl),0)} م² مع بروز ١.٨٠ م فوق شارع ١٢{(' و '+ar(pl['side'],2)+' م فوق شارع ٦') if pl.get('side') else ''}، فتحة السلم ١.٢ × ٣.٤ وفتحة ونش ١.٢ × ١.٢.</li>
@@ -490,11 +504,11 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
-<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة مفتوحة على المدخل من غير حيطة، علشان الضيوف يدخلوا عليها من باب الشقة على طول.' if k==7 else '')+'</div>' if k in (2,7) else ''}
+<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k in (2,7) else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
-        pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {ar(k,0)} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
+        pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {KN} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
 <div class="big">{wh_svg(pl,fl)}</div>
 <div class="fact"><b>المساحة الفاضية:</b> ≈ {ar(G_AREA if fl==1 else f2_area(pl),0)} م² · <b>الارتفاع:</b> ٣.٧٥ م · <b>العمدان:</b> {cnt}</div>
 {foot(fl+1)}</div>''')
@@ -503,7 +517,7 @@ def build(k):
 <div class="big">{flat_svg(pl,fl)}</div>
 <div class="fact"><b>الصافي:</b> ≈ {ar(tot,0)} م² · <b>الأبواب (برتقالي):</b> {ar(len(pl['leaves'])+1,0)} عادية (٠.٩٠ × ٢.١٠) + {ar(sum(1 for op in pl['front'] if op.get('k')!='win'),0)} منزلق · <b>البلكونات:</b> عرض {ar(bd,2)} م على شارع الـ ١٢ ·{"نفس تقسيم الدور الثالث بالظبط، الحمامات والمطابخ فوق بعض." if fl==4 else WELL_NOTE[k]}{street}</div>
 {foot(fl+1)}</div>''')
-    pages.append(f'''<div class="page">{hdr('تفاصيل العمدان',f'ترشيح {ar(k,0)} · {sysname}',6)}
+    pages.append(f'''<div class="page">{hdr('تفاصيل العمدان',f'ترشيح {KN} · {sysname}',6)}
 <div class="small">{columns_svg(k)}</div>
 <div class="fact"><b>العدد والأماكن:</b> {cnt}</div>
 <div class="fact"><b>المقاسات:</b> {sizes}</div>
@@ -517,9 +531,9 @@ def build(k):
 <div class="fact"><b>العرض:</b> ١.٢٠ م صافي، درابزين ٩٠ سم</div><div class="fact"><b>فتحة السقف:</b> ١.٢٠ × ٣.٤٠ م، ارتفاع صافي فوق أي درجة ≥ ٢.١٠ م</div>
 <div class="fact"><b>اللي بياخده من الأرضي:</b> صفر، تحته تخزين</div><div class="fact"><b>اللي بياخده من الدور الثاني:</b> ≈ ٤ م² (الفتحة)</div></div>
 {foot(7)}</div>''')
-    html='<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترشيح %s</title><style>'%ar(k,0)+CSS+'</style></head><body>'+''.join(pages)+'</body></html>'
+    html='<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترشيح %s</title><style>'%KN+CSS+'</style></head><body>'+''.join(pages)+'</body></html>'
     hp=os.path.join(OUT,f'set{k}.html'); open(hp,'w',encoding='utf-8').write(html)
-    pdf=os.path.join(OUT,f'ترشيح{k}.pdf')
+    pdf=os.path.join(OUT,f'ترشيح{"2ب" if k==7 else k}.pdf')
     r=subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','--headless=new','--disable-gpu','--no-sandbox','--no-pdf-header-footer','--print-to-pdf='+pdf,'file://'+hp],capture_output=True,text=True,timeout=180)
     d=open(pdf,'rb').read() if os.path.exists(pdf) else b''
     npg=len(re.findall(rb"/Type\s*/Page[^s]",d))
