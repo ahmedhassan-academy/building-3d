@@ -42,8 +42,18 @@ def edit_p2(p):
             d=-8.6-w['a'][0]; w['a']=[-8.6,12.4]
             for op in w['op']: op['u0']-=d; op['u1']-=d
     p['walls']=[w for w in p['walls'] if not (w['a']==[-5.5,14.9] or w['a']==[-7.0,15.9])]   # pantry wall + old light-well back wall
-    p['balc']=[[-10.35,-8.35],[-4.99,-2.99]]; p['balc_d']=1.5      # balconies 2.0 long x 1.50 deep, centred on the two bedrooms
-    p['front'][0].update(u0=1.97,u1=3.57); p['front'][1].update(u0=7.33,u1=8.93)   # 1.60 sliding doors inside the balconies
+    # closed bay 0.60 deep over the middle 5.0 m of the 12 m facade (law: closed projection <= 5% of street width and <= half the facade);
+    # the two balconies (2.0 long x 1.50 deep) move to the ends: one 1.5 m clear of the left neighbour, one at the street corner
+    BX0,BX1,BY=-8.62,-3.62,5.25; p['bay']=[BX0,BX1,BY]
+    b1,b2=R['نوم ١']['p'],R['نوم ٢']['p']
+    R['نوم ١']['p']=[b1[0],[BX0,5.85],[BX0,BY],[-6.5,BY]]+b1[2:]
+    R['نوم ٢']['p']=[[-6.5,BY],[BX1,BY],[BX1,5.85]]+b2[1:]
+    W['نوم ١'].update(a=area([T(q) for q in R['نوم ١']['p']]),dim='٥.٦ × ٣.٤ + ٢.١ × ٠.٦')
+    W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٥.٧ × ٣.٤ + ٢.٩ × ٠.٦')
+    for w in p['walls']:
+        if w['a']==[-6.5,5.959]: w['a']=[-6.5,BY]           # the wall between bedrooms 1 and 2 runs out to the bay front
+    p['balc']=[[-10.62,-8.62],[BX1,-1.62]]; p['balc_d']=1.5
+    p['front'][0].update(u0=1.70,u1=3.30); p['front'][1].update(u0=8.62,u1=10.12)   # sliding doors 1.60 and 1.50 inside the balconies
     W['حمام']['c']=[-5.75,14.5]; W['هول']['c']=[-7.8,12.9]          # labels moved off the door swings
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
@@ -147,7 +157,10 @@ def wall_lines(F,plan):
             elif k=='win': o.append(line(F,p,q,'#1F5FBF',1.5))
     return o
 def ring(F,plan,fl):
-    o=[poly(F,PROJ if fl==2 else BLD,fill='none',stroke='#1d2126',sw=3)]
+    if fl>=3 and plan.get('bay'):
+        x0,x1,y=plan['bay']; out=[A,(x0,5.85),(x0,y),(x1,y),(x1,5.85),D2,C2,B2]
+    else: out=PROJ if fl==2 else BLD
+    o=[poly(F,out,fill='none',stroke='#1d2126',sw=3)]
     if fl==2: o.append(line(F,A,D2,'#1d2126',1,dash='6 4'))
     if fl==1:
         x0,x1=plan['whdoor']; o.append(line(F,(x0,5.85),(x1,5.85),'#ffffff',4)); o.append(line(F,(x0,5.85),(x1,5.85),DOOR,6,dash='10 5'))
@@ -354,9 +367,9 @@ def build(k):
 <h3>مساحات الشقة (الدور الثالث = الرابع)</h3>
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · البلكونتين بقوا ٢ × ١.٥٠ بدل ٤.٦ و ٤.٢ × ١.٨٠، وباب البلكونة ١.٦٠ · الأبواب كلها بقت برتقالي بخط عريض.</div>' if k==2 else ''}
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · البلكونتين بقوا ٢ × ١.٥٠ بدل ٤.٦ و ٤.٢ × ١.٨٠، واتنقلوا على الجنبين · بروز مقفول ٠.٦٠ × ٥ م في نص الواجهة، دخل منه ١.٣ م² في نوم ١ و ١.٧ م² في نوم ٢ · الأبواب كلها بقت برتقالي بخط عريض.</div>' if k==2 else ''}
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-<p class="legend">{'البلكونة ٢ × ١.٥٠ والمنور ٢.٥ م عرض حسب طلبك. القانون: البلكونة المفتوحة على شارع ١٢ أقصاها ١.٢٠ م، والمنور اللي عليه مطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
+<p class="legend">{'البلكونة ٢ × ١.٥٠ والمنور ٢.٥ م عرض حسب طلبك. القانون: البلكونة المفتوحة على شارع ١٢ أقصاها ١.٢٠ م، والبروز المقفول أقصاه ٠.٦٠ م وعلى نص الواجهة بس، والمنور اللي عليه مطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
         pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {ar(k,0)} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
