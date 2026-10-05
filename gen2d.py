@@ -22,8 +22,9 @@ BLD=[T(p) for p in SH['BLD']]; CORE=[T(p) for p in SH['CORE']]; SLAB=[T(p) for p
 HOIST=[T(p) for p in SH['HOIST']]; DUCT=[T(p) for p in SH['DUCT']]; LAND=[T(p) for p in SH['LAND']]
 STRIP1=[T(p) for p in SH['STRIP1']]; STRIP2=[T(p) for p in SH['STRIP2']]
 XL=lw(4.05)                                                   # neighbour line at the projection front (about -12.53)
-PROJ=[(XL,4.05),(-1.62,4.05),D2,C2,B2,A]                 # floor-2 outline with the 1.80 projection
-F2=[(XL,4.05),(-1.62,4.05),D2,P1,P2,P3,B2,A]
+XR=rw(4.05)                                                   # 6 m street line at the projection front (about -2.07)
+PROJ=[(XL,4.05),(XR,4.05),D2,C2,B2,A]                 # floor-2 outline with the 1.80 projection
+F2=[(XL,4.05),(XR,4.05),D2,P1,P2,P3,B2,A]
 def area(p): return abs(sum(p[i][0]*p[(i+1)%len(p)][1]-p[(i+1)%len(p)][0]*p[i][1] for i in range(len(p))))/2
 G_AREA=area(SLAB)-area(DUCT); F2_AREA=area(F2)-1.2*3.4-area(HOIST)-area(DUCT)
 
@@ -109,6 +110,11 @@ def edit_p2(p):
     R['نوم ١']['p']=[[XL,4.05],[-10.55,4.05],[-10.55,5.55],[-8.05,5.55],[-8.05,4.05],[-6.0,4.05],[-6.0,9.2],[-11.355,9.2],[-12.12,5.85]]
     W['نوم ١']['a']=area([T(q) for q in R['نوم ١']['p']])
     p['front'][0].update(u0=1.82,u1=3.82,y=5.55)                                            # balcony door 2.0, centred in the balcony
+    # the forward part's right wall follows the slanted 6 m street facade too (no kink at the street corner)
+    fix=lambda pts:[[XR,4.05] if list(q)==[-1.62,4.05] else q for q in pts]
+    p['outline3']=fix(p['outline3']); R['نوم ٢']['p']=fix(R['نوم ٢']['p'])
+    W['نوم ٢']['a']=area([T(q) for q in R['نوم ٢']['p']])
+    p['front'][1].update(u0=7.33,u1=8.83)                                                   # bedroom 2's window re-centred
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
@@ -281,7 +287,7 @@ def svg_open(vb='0 0 680 650',title=''): return f'<svg viewBox="{vb}" role="img"
 def wh_svg(plan,fl):
     F=FR; o=[svg_open(title='مسقط المخزن')]+site(F)
     o.append(poly(F,SLAB if fl==1 else F2,fill='#ffffff',stroke='none'))
-    if fl==2: o.append(poly(F,[(XL,4.05),(-1.62,4.05),D2,A],fill='#E6F0E6',stroke='#4C8C4A',sw=0.8)); o.append(text(F,'بروز ١.٨٠ م فوق الشارع',(A[0]+D2[0])/2,4.95,cls='ts',fill='#2f6b2f'))
+    if fl==2: o.append(poly(F,[(XL,4.05),(XR,4.05),D2,A],fill='#E6F0E6',stroke='#4C8C4A',sw=0.8)); o.append(text(F,'بروز ١.٨٠ م فوق الشارع',(A[0]+D2[0])/2,4.95,cls='ts',fill='#2f6b2f'))
     o+=beams(F,plan,fl)
     o+=ring(F,plan,fl); o+=core_svg(F,fl,plan)
     if fl==1:                          # flats' street door, drawn over the stair box so its swing shows
@@ -296,8 +302,8 @@ def wh_svg(plan,fl):
     o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 def flat_svg(plan,fl):
     F=FR; o=[svg_open(title='مسقط الشقة')]+site(F)
-    if fl==3: o.append(poly(F,[(XL,4.05),(-1.62,4.05),(-1.62,5.85),(-12.12,5.85)],fill='#f1f1ec',stroke='#b9bec7',sw=0.6,dash='3 2'))
-    else: o.append(line(F,(XL,4.05),(-1.62,4.05),'#b9bec7',0.8,dash='3 2'))
+    if fl==3: o.append(poly(F,[(XL,4.05),(XR,4.05),(-1.62,5.85),(-12.12,5.85)],fill='#f1f1ec',stroke='#b9bec7',sw=0.6,dash='3 2'))
+    else: o.append(line(F,(XL,4.05),(XR,4.05),'#b9bec7',0.8,dash='3 2'))
     for r in plan['rooms']:
         fill,stroke=CLS.get(r['cls'],CLS['c-gray']); o.append(poly(F,[T(p) for p in r['p']],fill=fill,stroke=stroke,sw=0.8))
     bd=plan.get('balc_d',1.8); by=plan.get('balc_y0',5.85)
