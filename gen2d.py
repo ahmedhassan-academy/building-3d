@@ -44,32 +44,30 @@ def edit_p2(p):
             for op in w['op']: op['u0']-=d; op['u1']-=d
     p['walls']=[w for w in p['walls'] if not (w['a']==[-5.5,14.9] or w['a']==[-7.0,15.9])]   # pantry wall + old light-well back wall
     W['حمام']['c']=[-5.75,14.5]; W['هول']['c']=[-7.8,12.9]          # labels moved off the door swings
-    # bedroom 1 opens into the living room: one big living room on the 12 m street with the big balcony (his ask)
-    R['صالة']['p']=R['نوم ١']['p'][:3]+R['صالة']['p'][1:]
-    W['صالة'].update(a=area([T(q) for q in R['صالة']['p']]),dim='نوم ١ + الصالة القديمة',c=[-8.7,9.3])
-    p['rooms']=[r for r in p['rooms'] if r['n']!='نوم ١']; p['rows']=[r for r in p['rows'] if r['n']!='نوم ١']
-    for w in p['walls']:
-        if w['a']==[-11.235,9.2]:                                  # the bedroom 1 / living wall goes; only the bedroom 2 part stays
-            d=-6.5-w['a'][0]; w['a']=[-6.5,9.2]
-            w['op']=[dict(op,u0=op['u0']-d,u1=op['u1']-d) for op in w['op'] if op['u0']>d]
-    p['leaves']=[l for l in p['leaves'] if l['h']!=[-9.45,9.2]]
-    # a private hall for bedrooms 2 and 3 (his ask): 1.0 m wide, from the entrance hall down to bedroom 2, between the living room and bedroom 3
-    R['صالة']['p']=[q if q!=[-5.0,9.2] else [-6.0,9.2] for q in R['صالة']['p'] if q!=[-5.0,12.4]]
-    i=R['صالة']['p'].index([-6.0,9.2]); R['صالة']['p'].insert(i+1,[-6.0,12.4])
-    W['صالة']['a']=area([T(q) for q in R['صالة']['p']])
-    hl=R['هول']['p']; R['هول']['p']=[hl[0],[-6.0,12.4],[-6.0,9.2],[-5.0,9.2]]+hl[2:]
-    W['هول'].update(a=area([T(q) for q in R['هول']['p']]),dim='المدخل + هول النوم')
+    # private hall for the bedrooms (his asks, 5 Oct): 1.0 m wide, straight from the entrance hall down to the 12 m facade;
+    # bedroom 1 widens 0.5 m to reach it, bedroom 2 gives 1.5 m to it, and all three bedrooms open off it
+    b1,b2,lv,hl=R['نوم ١']['p'],R['نوم ٢']['p'],R['صالة']['p'],R['هول']['p']
+    R['نوم ١']['p']=[b1[0],[-6.0,5.85],[-6.0,9.2],b1[3]]
+    R['نوم ٢']['p']=[[-5.0,5.85],b2[1],b2[2],[-5.0,9.2]]
+    R['صالة']['p']=[lv[0],[-6.0,9.2],[-6.0,12.4]]+lv[3:]
+    R['هول']['p']=[hl[0],[-6.0,12.4],[-6.0,5.85],[-5.0,5.85]]+hl[2:]
+    for n in ('نوم ١','نوم ٢','صالة','هول'): W[n]['a']=area([T(q) for q in R[n]['p']])
+    W['نوم ١'].update(dim='٥.٧ × ٣.٤',c=[-9.0,7.4]); W['نوم ٢'].update(dim='٣.٨ × ٣.٤',c=[-3.2,7.4])
+    W['صالة']['dim']='٥ × ٣.٢ + ٢ × ١'; W['هول']['dim']='المدخل + هول النوم'
+    p['walls']=[w for w in p['walls'] if w['a'] not in ([-11.235,9.2],[-6.5,5.959])]       # old walls around bedrooms 1 and 2
+    p['walls']+=[{'a':[-11.235,9.2],'b':[-6.0,9.2],'t':0.12,'op':[]},                       # bedroom 1 | living room
+                 {'a':[-5.0,9.2],'b':[-0.888,9.2],'t':0.12,'op':[]},                        # bedroom 2 | bedroom 3
+                 {'a':[-6.0,5.96],'b':[-6.0,12.4],'t':0.12,'op':[{'u0':1.84,'u1':2.74,'z0':0,'z1':2.1,'k':'door'}]},   # hall | bedroom 1 + living; bedroom 1's side door
+                 {'a':[-5.0,5.96],'b':[-5.0,9.2],'t':0.12,'op':[{'u0':2.24,'u1':3.14,'z0':0,'z1':2.1,'k':'door'}]}]    # hall | bedroom 2; bedroom 2's door
     for w in p['walls']:
         if w['a']==[-8.6,12.4] and w['b'][1]==12.4: w['op'].append({'u0':2.6,'u1':3.6,'z0':0,'z1':2.1,'k':'open'})   # entrance hall opens into the bedroom hall
-        if w['a']==[-6.5,9.2]: w['op']=[dict(op,u0=op['u0']+0.2,u1=op['u1']+0.2) for op in w['op']]          # bedroom 2's door moves 0.2 m into the bedroom hall
-        if w['a']==[-5.0,9.2]: w['op'].append({'u0':1.3,'u1':2.2,'z0':0,'z1':2.1,'k':'door'})                 # bedroom 3's door, off the bedroom hall
-    p['walls'].append({'a':[-6.0,9.2],'b':[-6.0,12.4],'t':0.12,'op':[]})
-    for l in p['leaves']:
-        if l['h']==[-6.15,9.2]: l['h']=[-5.95,9.2]
-    p['leaves'].append({'h':[-5.0,11.4],'along':[0,-1],'out':[1,0],'w':0.9})
+        if w['a']==[-5.0,9.2] and w['b'][0]==-5.0: w['op'].append({'u0':1.3,'u1':2.2,'z0':0,'z1':2.1,'k':'door'})  # bedroom 3's door
+    p['leaves']=[l for l in p['leaves'] if l['h'] not in ([-9.45,9.2],[-6.15,9.2])]
+    p['leaves']+=[{'h':[-6.0,8.7],'along':[0,-1],'out':[-1,0],'w':0.9},                     # bedroom 1
+                  {'h':[-5.0,9.1],'along':[0,-1],'out':[1,0],'w':0.9},                      # bedroom 2
+                  {'h':[-5.0,11.4],'along':[0,-1],'out':[1,0],'w':0.9}]                     # bedroom 3
+    p['front'][1].update(u0=7.22,u1=10.02)                                                  # bedroom 2's balcony door moves off the hall end
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
-    p['title']='اقتراح ٢: صالة كبيرة على الواجهة وأوضتين'
-    p['desc']='الصالة على شارع الـ ١٢ بالبلكونة الكبيرة، أوضة على شارع الـ ١٢ وأوضة على شارع الـ ٦، مطبخ ٣ × ٣ وحمام في الضهر، عمود واحد داخل المخزن.'
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
 U=T(core['U']); V=T(core['V'])
@@ -343,7 +341,7 @@ COLINFO={
 5:('نظام الشبكة العادية','١٣ عمود: مطابق لترشيح ٢ حرفيًا.','عمدان الحيطان ٢٥ × ٧٠ في المخزن و ٢٥ × ٦٠ في الشقق. العمود الداخلي ٤٠ × ٤٠ ثم ٣٠ × ٣٠.'),
 6:('نظام الكمرات المحوّلة','١٢ عمود: كلهم في الحيطان الخارجية وأركان بيت السلم على خطوط حيطان ترشيح ٢. صفر عمود جوه المخزن. ٣ كمرات تحويل ٣٠ × ١٠٠ سم في سقف الدور الثاني بتشيل حيطان الشقة.','عمدان الحيطان ٣٠ × ٨٠ في المخزن (حمل أكبر بسبب كمرات التحويل) وبتصغر لـ ٢٥ × ٦٠ في الشقق.'),
 }
-WELL_NOTE={1:'نوم ٢ على المنور',2:'الصالة على الواجهة بالبلكونة',3:'نوم ٣ على المنور',4:'نوم ٣ على المنور',5:'الصالة من غير شباك',6:'الصالة من غير شباك'}
+WELL_NOTE={1:'نوم ٢ على المنور',2:'الصالة من غير شباك',3:'نوم ٣ على المنور',4:'نوم ٣ على المنور',5:'الصالة من غير شباك',6:'الصالة من غير شباك'}
 CSS='''
 @page{size:A4;margin:12mm 12mm 14mm}
 html,body{margin:0;padding:0;background:#fff;color:#1d2126;font-family:"Geeza Pro","Al Nile","Noto Naskh Arabic","Arial",sans-serif;font-size:3.5mm;line-height:1.6}
@@ -384,7 +382,7 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · فتحنا نوم ١ على الصالة: بقت صالة كبيرة على الواجهة بالبلكونة الكبيرة · هول خاص لنوم ٢ ونوم ٣ عرضه ١ م من المدخل · البلكونات زي ما هي · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · هول خاص للنوم عرضه ١ م من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · نوم ١ كبرت نص متر ونوم ٢ صغرت · البلكونات زي ما هي · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
 <p class="legend">{'البروز ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببروز مفتوح ١.٢٥ م، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
