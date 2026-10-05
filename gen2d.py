@@ -53,6 +53,21 @@ def edit_p2(p):
             d=-6.5-w['a'][0]; w['a']=[-6.5,9.2]
             w['op']=[dict(op,u0=op['u0']-d,u1=op['u1']-d) for op in w['op'] if op['u0']>d]
     p['leaves']=[l for l in p['leaves'] if l['h']!=[-9.45,9.2]]
+    # a private hall for bedrooms 2 and 3 (his ask): 1.0 m wide, from the entrance hall down to bedroom 2, between the living room and bedroom 3
+    R['صالة']['p']=[q if q!=[-5.0,9.2] else [-6.0,9.2] for q in R['صالة']['p'] if q!=[-5.0,12.4]]
+    i=R['صالة']['p'].index([-6.0,9.2]); R['صالة']['p'].insert(i+1,[-6.0,12.4])
+    W['صالة']['a']=area([T(q) for q in R['صالة']['p']])
+    hl=R['هول']['p']; R['هول']['p']=[hl[0],[-6.0,12.4],[-6.0,9.2],[-5.0,9.2]]+hl[2:]
+    W['هول'].update(a=area([T(q) for q in R['هول']['p']]),dim='المدخل + هول النوم')
+    for w in p['walls']:
+        if w['a']==[-8.6,12.4] and w['b'][1]==12.4: w['op'].append({'u0':2.6,'u1':3.6,'z0':0,'z1':2.1,'k':'open'})   # entrance hall opens into the bedroom hall
+        if w['a']==[-6.5,9.2]: w['op']=[dict(op,u0=op['u0']+0.2,u1=op['u1']+0.2) for op in w['op']]          # bedroom 2's door moves 0.2 m into the bedroom hall
+        if w['a']==[-5.0,9.2]: w['op'].append({'u0':1.3,'u1':2.2,'z0':0,'z1':2.1,'k':'door'})                 # bedroom 3's door, off the bedroom hall
+    p['walls'].append({'a':[-6.0,9.2],'b':[-6.0,12.4],'t':0.12,'op':[]})
+    for l in p['leaves']:
+        if l['h']==[-6.15,9.2]: l['h']=[-5.95,9.2]
+    p['leaves'].append({'h':[-5.0,11.4],'along':[0,-1],'out':[1,0],'w':0.9})
+    p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
     p['title']='اقتراح ٢: صالة كبيرة على الواجهة وأوضتين'
     p['desc']='الصالة على شارع الـ ١٢ بالبلكونة الكبيرة، أوضة على شارع الـ ١٢ وأوضة على شارع الـ ٦، مطبخ ٣ × ٣ وحمام في الضهر، عمود واحد داخل المخزن.'
 edit_p2(PLANS[2])
@@ -259,6 +274,7 @@ def flat_svg(plan,fl):
         if r['lbl']:
             o.append(text(F,r['n'],cx,cy,cls='t',dy=-7)); o.append(text(F,f"{r.get('dim') or ar(r['w'])+' × '+ar(r['h'])} ≈ {ar(r['a'],0)} م²",cx,cy,cls='ts',dy=8))
         else: o.append(text(F,r['n'],cx,cy,cls='ts'))
+    for t in plan.get('extra_labels',[]): o.append(text(F,t['t'],t['x'],t['y'],cls='ts',rot=t.get('rot')))
     o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 
 NT,TR,NR,RISE,SW=21,0.27,22,3.75,1.2
@@ -368,7 +384,7 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · فتحنا نوم ١ على الصالة: بقت صالة كبيرة ≈ ٣٩ م² على الواجهة بالبلكونة الكبيرة · البلكونات زي ما هي · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل ومكانه دخل في الصالة (بقت ≈ ٢١ م² بدل ١٩) · شلنا الكرار ومكانه دخل في المنور (بقى عرضه ٢.٥ م) · فتحنا نوم ١ على الصالة: بقت صالة كبيرة على الواجهة بالبلكونة الكبيرة · هول خاص لنوم ٢ ونوم ٣ عرضه ١ م من المدخل · البلكونات زي ما هي · الأبواب برتقالي بخط عريض.</div>' if k==2 else ''}
 <p class="legend">{'البروز ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببروز مفتوح ١.٢٥ م، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k==2 else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
