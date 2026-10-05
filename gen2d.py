@@ -115,6 +115,16 @@ def edit_p2(p):
     p['outline3']=fix(p['outline3']); R['نوم ٢']['p']=fix(R['نوم ٢']['p'])
     W['نوم ٢']['a']=area([T(q) for q in R['نوم ٢']['p']])
     p['front'][1].update(u0=7.33,u1=8.83)                                                   # bedroom 2's window re-centred
+    # the bedroom hall stops just past the doors of bedrooms 1 and 2 (y 7.7); the rest of it joins bedroom 2 (his ask)
+    R['نوم ٢']['p']=[q for q in R['نوم ٢']['p'] if q not in ([-5.0,5.85],[-6.0,5.85])]+[[-5.0,7.7],[-6.0,7.7]]
+    hl=R['هول']['p']; R['هول']['p']=[[-6.0,7.7] if q==[-6.0,5.85] else [-5.0,7.7] if q==[-5.0,5.85] else q for q in hl]
+    for n in ('نوم ٢','هول'): W[n]['a']=area([T(q) for q in R[n]['p']])
+    p['walls']=[w for w in p['walls'] if w['a']!=[-6.0,5.85]]                              # old end of the hall
+    p['walls'].append({'a':[-6.0,7.7],'b':[-5.0,7.7],'t':0.12,'op':[]})                    # new end of the hall
+    for w in p['walls']:
+        if w['a']==[-5.0,5.96]:                                                             # hall | bedroom 2 wall now starts at the new hall end
+            w['a']=[-5.0,7.7]
+            for op in w['op']: op['u0']-=1.74; op['u1']-=1.74
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
