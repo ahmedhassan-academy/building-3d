@@ -23,6 +23,9 @@ HOIST=[T(p) for p in SH['HOIST']]; DUCT=[T(p) for p in SH['DUCT']]; LAND=[T(p) f
 STRIP1=[T(p) for p in SH['STRIP1']]; STRIP2=[T(p) for p in SH['STRIP2']]
 XL=lw(4.05)                                                   # neighbour line at the projection front (about -12.53)
 XR=rw(4.05)                                                   # 6 m street line at the projection front (about -2.07)
+SK=math.hypot(1,SH['rw'][1]); NRM=(1/SK,-SH['rw'][1]/SK)     # outward normal of the 6 m street wall
+def sh(p,d): return (p[0]+NRM[0]*d,p[1]+NRM[1]*d)              # a point pushed d metres out over the 6 m street
+def rw2(y,d): return rw(y)+d*SK                                # the 6 m street wall line pushed out d metres
 PROJ=[(XL,4.05),(XR,4.05),D2,C2,B2,A]                 # floor-2 outline with the 1.80 projection
 F2=[(XL,4.05),(XR,4.05),D2,P1,P2,P3,B2,A]
 def area(p): return abs(sum(p[i][0]*p[(i+1)%len(p)][1]-p[(i+1)%len(p)][0]*p[i][1] for i in range(len(p))))/2
@@ -30,6 +33,7 @@ G_AREA=area(SLAB)-area(DUCT); F2_AREA=area(F2)-1.2*3.4-area(HOIST)-area(DUCT)
 
 # ---- 5 Oct 2026, his ask, proposal 2 only. 2D only: the 3D page still reads the old layout from data3d.js.
 # The balconies stay exactly as they were (4.6 / 4.2 x 1.80): he asked not to touch them.
+CB5=12.73+(-5.0+5.03)*(11.5-12.73)/(-0.185+5.03)
 def edit_p2(p):
     R={r['n']:r for r in p['rooms']}; W={r['n']:r for r in p['rows']}
     lv,ln=R['صالة']['p'],R['غسيل']['p']
@@ -115,6 +119,17 @@ def edit_p2(p):
     p['outline3']=fix(p['outline3']); R['نوم ٢']['p']=fix(R['نوم ٢']['p'])
     W['نوم ٢']['a']=area([T(q) for q in R['نوم ٢']['p']])
     p['front'][1].update(u0=7.33,u1=8.83)                                                   # bedroom 2's window re-centred
+    # 1.20 m out over the 6 m street from floor 2 up (his ask): all of it goes into bedrooms 2 and 3 and the stair box
+    d=1.2; p['side']=d
+    p['outline3']=[q for q in p['outline3'] if list(q) not in ([XR,4.05],list(D2),list(C2))]
+    i=[list(q) for q in p['outline3']].index([-8.05,4.05]); p['outline3'][i+1:i+1]=[[rw2(4.05,d),4.05],list(sh(C2,d))]
+    R['نوم ٢']['p']=[[-6.0,4.05],[rw2(4.05,d),4.05],[rw2(9.2,d),9.2],[-5.0,9.2],[-5.0,7.7],[-6.0,7.7]]
+    R['نوم ٣']['p']=[[-5.0,9.2],[rw2(9.2,d),9.2],list(sh(P1,d)),[-5.0,CB5]]
+    for n in ('نوم ٢','نوم ٣'): W[n]['a']=area([T(q) for q in R[n]['p']])
+    W['نوم ٣']['dim']='٤.٨ × ٣.٥ + البروز'
+    for w in p['walls']:
+        if w['a']==[-5.0,9.2] and w['b'][1]==9.2: w['b']=[rw2(9.2,d),9.2]                   # bedroom 2 | bedroom 3 wall runs out to the new wall
+    p['front'][1].update(u0=7.95,u1=9.45)                                                   # bedroom 2's front window re-centred again
     # the bedroom hall stops just past the doors of bedrooms 1 and 2 (y 7.7); the rest of it joins bedroom 2 (his ask)
     R['نوم ٢']['p']=[q for q in R['نوم ٢']['p'] if q not in ([-5.0,5.85],[-6.0,5.85])]+[[-5.0,7.7],[-6.0,7.7]]
     hl=R['هول']['p']; R['هول']['p']=[[-6.0,7.7] if q==[-6.0,5.85] else [-5.0,7.7] if q==[-5.0,5.85] else q for q in hl]
@@ -181,9 +196,9 @@ def is_core_corner(x,y): return any(abs(x-q[0])<0.02 and abs(y-q[1])<0.02 for q 
 # ---------------- building pieces ----------------
 def site(F):
     return [poly(F,LAND,fill='#f4f1ea',stroke='#c9ccd2',sw=0.6),poly(F,STRIP1,fill='#f9efe9',stroke='#e0c9bd',sw=0.5),poly(F,STRIP2,fill='#fbf5e3',stroke='#e6d7a8',sw=0.5)]
-def dims(F,fl):
+def dims(F,fl,side=0):
     o=[text(F,'الواجهة ١٠.٥٠ م — شارع ١٢ م',(A[0]+D2[0])/2,3.35 if fl>=2 else 5.2,cls='t')]
-    o.append(text(F,'≈ ٨.٨٥ م — شارع ٦ م',*mid(D2,C2,0.75,-0.15),cls='t',rot=rot_along(D2,C2)))
+    o.append(text(F,'≈ ٨.٨٥ م — شارع ٦ م',*sh(mid(D2,C2,0.75,-0.15),side),cls='t',rot=rot_along(D2,C2)))
     o.append(text(F,'الجار الشمال — ١١.٤٠ م',*mid(A,B2,-0.6,0),cls='t',rot=rot_along(A,B2)))
     o.append(text(F,'الجار — ≈ ١٠.٤٥ م',*mid(B2,C2,0,0.55),cls='t',rot=rot_along(B2,C2)))
     return o
@@ -232,27 +247,31 @@ def ring(F,plan,fl):
     if fl>=3 and plan.get('outline3'): out=[T(q) for q in plan['outline3']]
     elif fl>=3 and bays:                 # rooms that come forward of the 12 m facade
         out=[A]+[q for x0,x1,y in sorted(bays) for q in ((x0,5.85),(x0,y),(x1,y),(x1,5.85))]+[D2,C2,B2]
+    elif fl==2 and plan.get('side'): d=plan['side']; out=[(XL,4.05),(rw2(4.05,d),4.05),sh(C2,d),B2,A]
     else: out=PROJ if fl==2 else BLD
+    ds=plan.get('side',0) if fl>=2 else 0
     o=[poly(F,out,fill='none',stroke='#1d2126',sw=3)]
     if fl==2: o.append(line(F,A,D2,'#1d2126',1,dash='6 4'))
+    if fl==2 and ds: o.append(line(F,D2,C2,'#1d2126',1,dash='6 4'))
     if fl==1:
         x0,x1=plan['whdoor']; o.append(line(F,(x0,5.85),(x1,5.85),'#ffffff',4)); o.append(line(F,(x0,5.85),(x1,5.85),DOOR,6,dash='10 5'))
         o.append(text(F,f'باب المخزن {ar(x1-x0)} م (رول)',(x0+x1)/2,6.45,cls='ts',fill=DOOR))
     if fl in (1,2):
-        for u0,u1 in ((1.2,2.4),(3.4,4.6)): o.append(win(F,upt(D2,C2,u0),upt(D2,C2,u1)))
+        for u0,u1 in ((1.2,2.4),(3.4,4.6)): o.append(win(F,sh(upt(D2,C2,u0),ds),sh(upt(D2,C2,u1),ds)))
     if fl==2:
         for x0,x1 in ((-11.2,-9.2),(-7.9,-5.9),(-4.6,-2.6)): o.append(win(F,(x0,4.05),(x1,4.05)))
     if fl>=3:
         for op in plan['front']: o.append((win if op.get('k')=='win' else slide)(F,(A[0]+op['u0'],op.get('y',5.85)),(A[0]+op['u1'],op.get('y',5.85))))
-        for op in plan['right']: o.append(win(F,upt(D2,C2,op['u0']),upt(D2,C2,op['u1'])))
+        for op in plan['right']: o.append(win(F,sh(upt(D2,C2,op['u0']),ds),sh(upt(D2,C2,op['u1']),ds)))
     return o
 def core_svg(F,fl,plan):
-    o=[poly(F,CORE,fill=CLS['c-teal'][0],stroke='#1d2126',sw=3)]
+    dc=plan.get('side',0) if fl>=2 else 0
+    o=[poly(F,[sh(C2,dc),sh(P1,dc),P2,P3] if dc else CORE,fill=CLS['c-teal'][0],stroke='#1d2126',sw=3)]
     S0,S1,TR=core['S0'],core['S1'],core['TR']
     for ta,tb in (core['sideA'],core['sideB']):
         for i in range(9): o.append(line(F,cp(S0+i*TR,ta),cp(S0+i*TR,tb),'#556070',0.8))
         o.append(poly(F,[cp(S0,ta),cp(S1,ta),cp(S1,tb),cp(S0,tb)],fill='none',stroke='#556070',sw=0.8))
-    for s0,s1 in (core['land_back'],core['land_street']):
+    for s0,s1 in (core['land_back'],(core['land_street'][0],core['land_street'][1]+dc)):
         o.append(poly(F,[cp(s0,0.25),cp(s1,0.25),cp(s1,2.75),cp(s0,2.75)],fill='none',stroke='#556070',sw=0.8,dash='3 2'))
     ta,tb=core['sideA']; tm=(ta+tb)/2; rot=rot_along(cp(S1,tm),cp(S0,tm))
     o.append(line(F,cp(S1+0.15,tm),cp(S0-0.1,tm),'#B3261E',1.5,marker='arw'))
@@ -261,7 +280,7 @@ def core_svg(F,fl,plan):
         tb0,tb1=core['sideB']; tm2=(tb0+tb1)/2
         o.append(line(F,cp(S0-0.1,tm2),cp(S1+0.15,tm2),'#3a414b',1.2,marker='arg'))
         o.append(text(F,'نازل',*cp((S0+S1)/2,tm2),cls='ts',rot=rot,fill='#3a414b',dy=-9))
-    o.append(text(F,'بيت السلم ٣ × ٥',*cp(2.5,1.5),cls='t',rot=rot,dy=0))
+    o.append(text(F,f'بيت السلم ٣ × {ar(5+dc) if dc else "٥"}',*cp(2.5,1.5),cls='t',rot=rot,dy=0))
     if fl<=2: o.append(text(F,'مقفول على المخزن',*cp(2.5,1.5),cls='ts',rot=rot,dy=12))
     if fl>=3:
         e=plan['entry']; a=cp(0,e['t0']); b=cp(0,e['t1'])
@@ -294,10 +313,18 @@ def duct(F):
 
 # ---------------- pages ----------------
 def svg_open(vb='0 0 680 650',title=''): return f'<svg viewBox="{vb}" role="img"><title>{title}</title>{DEFS}'
+def f2_poly(plan):
+    d=plan.get('side',0)
+    return [(XL,4.05),(rw2(4.05,d),4.05),sh(P1,d),P2,P3,B2,A] if d else F2
+def f2_area(plan): return area(f2_poly(plan))-1.2*3.4-area(HOIST)-area(DUCT)
 def wh_svg(plan,fl):
     F=FR; o=[svg_open(title='مسقط المخزن')]+site(F)
-    o.append(poly(F,SLAB if fl==1 else F2,fill='#ffffff',stroke='none'))
-    if fl==2: o.append(poly(F,[(XL,4.05),(XR,4.05),D2,A],fill='#E6F0E6',stroke='#4C8C4A',sw=0.8)); o.append(text(F,'بروز ١.٨٠ م فوق الشارع',(A[0]+D2[0])/2,4.95,cls='ts',fill='#2f6b2f'))
+    d=plan.get('side',0)
+    o.append(poly(F,SLAB if fl==1 else f2_poly(plan),fill='#ffffff',stroke='none'))
+    if fl==2:
+        o.append(poly(F,[(XL,4.05),(rw2(4.05,d),4.05),sh(C2,d),C2,D2,A] if d else [(XL,4.05),(XR,4.05),D2,A],fill='#E6F0E6',stroke='#4C8C4A',sw=0.8))
+        o.append(text(F,'بروز ١.٨٠ م فوق شارع ١٢' if d else 'بروز ١.٨٠ م فوق الشارع',(A[0]+D2[0])/2,4.95,cls='ts',fill='#2f6b2f'))
+        if d: o.append(text(F,f'بروز {ar(d,2)} م فوق شارع ٦',*sh(mid(D2,C2),d/2),cls='ts',rot=rot_along(D2,C2),fill='#2f6b2f'))
     o+=beams(F,plan,fl)
     o+=ring(F,plan,fl); o+=core_svg(F,fl,plan)
     if fl==1:                          # flats' street door, drawn over the stair box so its swing shows
@@ -306,10 +333,10 @@ def wh_svg(plan,fl):
         o.append(text(F,'مدخل الشقق ١.١٠',*mid(a,b,0.9,-0.1),cls='ts',rot=rot_along(P1,C2),fill=DOOR))
     o+=wh_stair(F) if fl==1 else f2_openings(F)
     o+=duct(F); o+=columns(F,plan,fl)
-    o.append(text(F,f'مساحة فاضية ≈ {ar(G_AREA if fl==1 else F2_AREA,0)} م²',-6.6,10.6,cls='th'))
+    o.append(text(F,f'مساحة فاضية ≈ {ar(G_AREA if fl==1 else f2_area(plan),0)} م²',-6.6,10.6,cls='th'))
     o.append(text(F,'ارتفاع ٣.٧٥ م',-6.6,10.6,cls='ts',dy=16))
     if plan.get('transfer') and fl==2: o.append(text(F,'كمرات تحويل ٣٠ × ١٠٠ سم تحت حيطان الشقة',-6.6,7.4,cls='ts',fill='#8A4B12'))
-    o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
+    o+=dims(F,fl,plan.get('side',0) if fl>=2 else 0); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 def flat_svg(plan,fl):
     F=FR; o=[svg_open(title='مسقط الشقة')]+site(F)
     if fl==3: o.append(poly(F,[(XL,4.05),(XR,4.05),(-1.62,5.85),(-12.12,5.85)],fill='#f1f1ec',stroke='#b9bec7',sw=0.6,dash='3 2'))
@@ -338,12 +365,17 @@ def flat_svg(plan,fl):
         o.append(line(F,A,D2,'#B3261E',2.2,dash='8 5'))
         o.append(f'<text x="{F.X(-10.75):.1f}" y="{F.Y(6.12):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:9px;font-weight:700">خط الواجهة القديم</text>')
         # how far we went out over the street, written next to the street corner: a red dimension 1.80 + the area per floor
-        taken=area([(XL,4.05),(XR,4.05),D2,A]); xd=-0.85
-        o.append(line(F,D2,(xd+0.2,5.85),'#B3261E',0.8,dash='3 2')); o.append(line(F,(XR,4.05),(xd+0.2,4.05),'#B3261E',0.8,dash='3 2'))
-        o.append(f'<line x1="{F.X(xd):.1f}" y1="{F.Y(5.85):.1f}" x2="{F.X(xd):.1f}" y2="{F.Y(4.05):.1f}" stroke="#B3261E" stroke-width="1.4" marker-start="url(#arw)" marker-end="url(#arw)"/>')
-        for t,y,sz in (('طلعنا من الشارع',5.25,10),(f'١.٨٠ م ≈ {ar(taken,0)} م²',4.75,11)):
-            o.append(f'<text x="{F.X(0.95):.1f}" y="{F.Y(y):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:{sz}px;font-weight:700">{t}</text>')
-    o+=dims(F,fl); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
+        taken=area([(XL,4.05),(XR,4.05),D2,A]); xd=XL-0.45; d=plan.get('side',0)
+        def red(t,x,y,sz=10): return f'<text x="{F.X(x):.1f}" y="{F.Y(y):.1f}" text-anchor="middle" dominant-baseline="central" style="fill:#B3261E;font-size:{sz}px;font-weight:700">{t}</text>'
+        def arrow(a,b): return f'<line x1="{F.X(a[0]):.1f}" y1="{F.Y(a[1]):.1f}" x2="{F.X(b[0]):.1f}" y2="{F.Y(b[1]):.1f}" stroke="#B3261E" stroke-width="1.4" marker-start="url(#arw)" marker-end="url(#arw)"/>'
+        o.append(line(F,A,(xd-0.1,5.85),'#B3261E',0.8,dash='3 2')); o.append(line(F,(XL,4.05),(xd-0.1,4.05),'#B3261E',0.8,dash='3 2'))
+        o.append(arrow((xd,5.85),(xd,4.05))); o.append(red(f'شارع ١٢: طلعنا ١.٨٠ م ≈ {ar(taken,0)} م²',-10.2,2.85))
+        if d:                          # the 6 m street side: old wall dashed, arrow across the new strip, amount outside
+            side=area([(XR,4.05),(rw2(4.05,d),4.05),sh(C2,d),C2])
+            o.append(line(F,D2,C2,'#B3261E',2.2,dash='8 5'))
+            p0=(rw(6.6),6.6); o.append(arrow(p0,sh(p0,d)))
+            o.append(red(f'شارع ٦: طلعنا {ar(d,2)} م',1.45,7.0)); o.append(red(f'≈ {ar(side,0)} م² في الدور',1.45,6.5))
+    o+=dims(F,fl,plan.get('side',0)); o+=legend(plan); o.append('</svg>'); return '\n'.join(o)
 
 NT,TR,NR,RISE,SW=21,0.27,22,3.75,1.2
 def stair_svg():
@@ -440,14 +472,15 @@ def build(k):
     tot=sum(r['a'] for r in rows); dw=pl['whdoor'][1]-pl['whdoor'][0]
     taken=area([(XL,4.05),(XR,4.05),D2,A]); bd0=pl.get('balc_d',1.8)
     tbal=sum((x2-x1)*bd0 for x1,x2 in pl['balc']) if pl.get('outline3') else 0
-    street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> ≈ {ar(taken,0)} م² في الدور، منهم ≈ {ar(taken-tbal,0)} م² أوض و {ar(tbal,1)} م² بلكونة' if pl.get('outline3') else '')
+    sd_=pl.get('side',0); tside=area([(XR,4.05),(rw2(4.05,sd_),4.05),sh(C2,sd_),C2]) if sd_ else 0
+    street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> من شارع ١٢ ≈ {ar(taken,0)} م² (منهم {ar(tbal,1)} م² بلكونة)'+(f' ومن شارع ٦ ≈ {ar(tside,0)} م²' if sd_ else '')+f' · المجموع ≈ {ar(taken+tside,0)} م² في الدور' if pl.get('outline3') else '')
     def foot(i): return f'<div class="foot"><span>ترشيح {ar(k,0)}: {title} · {DATE}</span><span>صفحة {ar(i,0)} من {ar(N,0)}</span></div>'
     def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i,0)} من {ar(N,0)}</div></div>'
     pages=[]
     pages.append(f'''<div class="page">{hdr(f'ترشيح {ar(k,0)}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
 <div class="rules"><b>اللي في الملف ده:</b><ol>
 <li><b>الدور الأول (الأرضي):</b> مخزن فاضي ≈ {ar(G_AREA,0)} م²، باب رول {ar(dw)} م على شارع الـ ١٢، سلم داخلي للدور الثاني، ومجرى مواسير ٤٠ × ٦٠ في الضهر. مفيش منور.</li>
-<li><b>الدور الثاني:</b> مخزن كامل ≈ {ar(F2_AREA,0)} م² مع بروز ١.٨٠ م فوق الشارع، فتحة السلم ١.٢ × ٣.٤ وفتحة ونش ١.٢ × ١.٢.</li>
+<li><b>الدور الثاني:</b> مخزن كامل ≈ {ar(f2_area(pl),0)} م² مع بروز ١.٨٠ م فوق شارع ١٢{(' و '+ar(pl['side'],2)+' م فوق شارع ٦') if pl.get('side') else ''}، فتحة السلم ١.٢ × ٣.٤ وفتحة ونش ١.٢ × ١.٢.</li>
 <li><b>الدور الثالث والرابع:</b> شقة في كل دور بنفس التقسيم (≈ {ar(tot,0)} م² صافي).</li>
 <li><b>العمدان:</b> {sysname}. {cnt}</li>
 <li><b>سلم المخزن:</b> مستقيم ٢٢ درجة، عرض ١.٢٠ م، طول ٦.٩ م موازي لحيطة الجار الشمال.</li></ol></div>
@@ -461,7 +494,7 @@ def build(k):
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
         pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {ar(k,0)} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
 <div class="big">{wh_svg(pl,fl)}</div>
-<div class="fact"><b>المساحة الفاضية:</b> ≈ {ar(G_AREA if fl==1 else F2_AREA,0)} م² · <b>الارتفاع:</b> ٣.٧٥ م · <b>العمدان:</b> {cnt}</div>
+<div class="fact"><b>المساحة الفاضية:</b> ≈ {ar(G_AREA if fl==1 else f2_area(pl),0)} م² · <b>الارتفاع:</b> ٣.٧٥ م · <b>العمدان:</b> {cnt}</div>
 {foot(fl+1)}</div>''')
     for fl in (3,4):
         pages.append(f'''<div class="page">{hdr(f'الدور {"الثالث" if fl==3 else "الرابع"}: شقة',pl['desc'],fl+1)}
