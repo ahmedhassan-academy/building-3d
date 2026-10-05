@@ -96,6 +96,11 @@ def edit_p2(p):
             for op in w['op']: op['u0']+=1.91; op['u1']+=1.91
     p['walls'].append({'a':[-6.0,5.85],'b':[-5.0,5.85],'t':0.12,'op':[]})                  # end of the bedroom hall
     p['front'][1].update(u0=7.56,u1=9.06)                                                   # bedroom 2's window re-centred on its wider front
+    # the 0.52 m strip by the left neighbour comes out too (his ask) and joins bedroom 1; balcony 1 is now recessed, open only to the street
+    p['bays']=[[-12.12,-11.6,4.05],[-11.6,-7.0,5.05],[-7.0,-1.62,4.05]]
+    p['outline3']=[A,[-12.12,4.05],[-11.6,4.05],[-11.6,5.05],[-7.0,5.05],[-7.0,4.05],[-1.62,4.05],D2,C2,B2]
+    b1=R['نوم ١']['p']; R['نوم ١']['p']=[[-12.12,4.05],[-11.6,4.05]]+b1[2:]+[b1[0]]
+    W['نوم ١']['a']=area([T(q) for q in R['نوم ١']['p']])
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
