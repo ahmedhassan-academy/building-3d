@@ -177,6 +177,39 @@ def edit_open(p):
     p['title']='اقتراح ٢ب: الصالة مفتوحة على المدخل والهول'
     p['desc']='زي ترشيح ٢ بالظبط، بس الصالة واخدة المدخل والهول من غير حيطان: الضيف بيدخل من باب الشقة على الصالة على طول، ونوم ٣ بتفتح عليها.'
 PLANS[7]=copy.deepcopy(PLANS[2]); edit_open(PLANS[7])
+# ---- new proposal 3 (his ask, 5 Oct): proposal 2b, but bedrooms 1 + 2 become three rooms side by side on the 12 m street
+#      (left ~17, middle ~14, corner ~17 with the balcony), all off a passage behind them; the rest of the flat unchanged
+def edit_three(p):
+    R={r['n']:r for r in p['rooms']}; W={r['n']:r for r in p['rows']}
+    d=p['side']; y0=R['نوم ٣']['p'][0][1]; xr=rw2(4.05,d); bx0,bx1=-4.17,-1.67
+    R['نوم ١']['p']=[[XL,4.05],[-8.6,4.05],[-8.6,9.2],[-11.355,9.2]]
+    R['نوم ٢']['p']=[[-8.6,4.05],[-5.0,4.05],[-5.0,7.2],[-6.0,7.2],[-6.0,8.2],[-8.6,8.2]]
+    R['هول']['p']=[[-8.6,8.2],[-6.0,8.2],[-6.0,7.2],[-5.0,7.2],[-5.0,9.2],[-8.6,9.2]]
+    p4=[[-5.0,4.05],[bx0,4.05],[bx0,5.55],[bx1,5.55],[bx1,4.05],[xr,4.05],[rw2(y0,d),y0],[-5.0,y0]]
+    p['rooms'].append({'n':'نوم ٤','cls':'c-blue','p':p4})
+    W4=dict(W['نوم ٣']); W4.update(n='نوم ٤',c=[-3.0,7.0],dim='٤.٧ × ٤.٤'); p['rows'].insert(p['rows'].index(W['نوم ٣'])+1,W4)
+    R['نوم ٤']=p['rooms'][-1]; W['نوم ٤']=W4
+    for rn,wn in (('نوم ١','نوم ١'),('نوم ٢','نوم ٢'),('هول','ممر'),('نوم ٤','نوم ٤')): W[wn]['a']=area([T(q) for q in R[rn]['p']])   # the hall row is called 'ممر' in 2b
+    W['نوم ١'].update(dim='٣.٤ × ٥.٢',c=[-10.0,7.3]); W['نوم ٢'].update(dim='٣.٣ × ٤.٢',c=[-7.3,6.85]); W['ممر'].update(c=[-7.3,8.7],dim='')
+    keep=[]
+    for w in p['walls']:
+        if w['a'] in ([-6.0,4.05],[-6.0,7.7],[-5.0,7.7]): continue                          # old walls of bedrooms 1 / 2 and the short passage
+        keep.append(w)
+    p['walls']=keep+[
+        {'a':[-8.6,4.05],'b':[-8.6,9.2],'t':0.12,'op':[{'u0':4.2,'u1':5.1,'z0':0,'z1':2.1,'k':'door'}]},    # bedroom 1 | bedroom 2 + passage; bedroom 1's door
+        {'a':[-8.6,8.2],'b':[-6.0,8.2],'t':0.12,'op':[{'u0':0.9,'u1':1.8,'z0':0,'z1':2.1,'k':'door'}]},     # passage | bedroom 2; bedroom 2's door
+        {'a':[-6.0,7.2],'b':[-6.0,8.2],'t':0.12,'op':[]},{'a':[-6.0,7.2],'b':[-5.0,7.2],'t':0.12,'op':[]},  # passage | bedroom 2 (its strip)
+        {'a':[-5.0,4.05],'b':[-5.0,9.2],'t':0.12,'op':[{'u0':3.25,'u1':4.15,'z0':0,'z1':2.1,'k':'door'}]}]   # bedroom 2 | bedroom 4, passage | bedroom 4; bedroom 4's door
+    p['leaves']=[l for l in p['leaves'] if l['h'] not in ([-6.0,8.7],[-5.95,7.7])]+[
+        {'h':[-8.6,9.15],'along':[0,-1],'out':[-1,0],'w':0.9},{'h':[-7.7,8.2],'along':[1,0],'out':[0,-1],'w':0.9},
+        {'h':[-5.0,8.2],'along':[0,-1],'out':[1,0],'w':0.9}]
+    p['balc']=[[bx0,bx1]]
+    i=[list(q) for q in p['outline3']].index([-10.55,4.05]); p['outline3'][i:i+4]=[[bx0,4.05],[bx0,5.55],[bx1,5.55],[bx1,4.05]]
+    p['front']=[{'u0':0.62,'u1':2.02,'z0':0.9,'z1':2.2,'k':'win','y':4.05},{'u0':4.42,'u1':5.62,'z0':0.9,'z1':2.2,'k':'win','y':4.05},
+                {'u0':bx0+0.25+12.12,'u1':bx1-0.25+12.12,'z0':0.02,'z1':2.25,'k':'slide','y':5.55}]
+    p['title']='اقتراح ٣: ٤ أوض نوم، تلاتة منهم على شارع ١٢'
+    p['desc']='زي ترشيح ٢ب، بس مكان نوم ١ ونوم ٢ بقى ٣ أوض جنب بعض على شارع ١٢، وكلهم بيفتحوا على ممر وراهم.'
+PLANS[8]=copy.deepcopy(PLANS[7]); edit_three(PLANS[8])
 core=SH['core']; whst=SH['whst']
 U=T(core['U']); V=T(core['V'])
 def cp(s,t): return (P2[0]+U[0]*s+V[0]*t, P2[1]+U[1]*s+V[1]*t)
@@ -488,6 +521,7 @@ COLINFO={
 }
 WELL_NOTE={1:'نوم ٢ على المنور',2:'الصالة من غير شباك',3:'نوم ٣ على المنور',4:'نوم ٣ على المنور',5:'الصالة من غير شباك',6:'الصالة من غير شباك'}
 COLINFO[7]=COLINFO[2]; WELL_NOTE[7]='الصالة مفتوحة على المدخل (استقبال)'
+COLINFO[8]=COLINFO[2]; WELL_NOTE[8]='الصالة مفتوحة على المدخل (استقبال)، و٤ أوض نوم'
 CSS='''
 @page{size:A4;margin:12mm 12mm 14mm}
 html,body{margin:0;padding:0;background:#fff;color:#1d2126;font-family:"Geeza Pro","Al Nile","Noto Naskh Arabic","Arial",sans-serif;font-size:3.5mm;line-height:1.6}
@@ -507,7 +541,7 @@ h3{font-size:4.2mm;margin:4mm 0 2mm;font-weight:700;color:#1F5FBF}
 svg .t{font-size:11px;fill:#1d2126} svg .ts{font-size:9px;fill:#3a414b} svg .th{font-size:13px;font-weight:700;fill:#1d2126}
 '''
 def build(k):
-    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7; KN={7:'٢ب'}.get(k,ar(k,0))
+    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7; KN={7:'٢ب',8:'٣'}.get(k,ar(k,0))
     rows=[r for r in pl['rows'] if r['n']!='منور']
     big=[r for r in rows if r['a']>=5]; small=[r for r in rows if r['a']<5]
     tr=''.join(f'<tr><td>{r["n"]}</td><td class="n">{r.get("dim") or ar(r["w"])+" × "+ar(r["h"])}</td><td class="n">{ar(r["a"])}</td></tr>' for r in big)
@@ -532,8 +566,8 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة واخدة المدخل والهول من غير حيطان (≈ ٢٤ م²)، علشان الضيوف يدخلوا عليها من باب الشقة على طول، وفاضل ممر ١ × ١.٥ قدام نوم ١ ونوم ٢.' if k==7 else '')+'</div>' if k in (2,7) else ''}
-<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k in (2,7) else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة واخدة المدخل والهول من غير حيطان (≈ ٢٥ م²)، علشان الضيوف يدخلوا عليها من باب الشقة على طول.' if k in (7,8) else '')+(' · مكان نوم ١ ونوم ٢ بقى ٣ أوض جنب بعض على شارع ١٢ (≈ ١٧ و ١٤ و ١٧ م²) وكلهم على ممر وراهم، والبلكونة في أوضة الناصية.' if k==8 else '')+'</div>' if k in (2,7,8) else ''}
+<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k in (2,7,8) else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
         pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {KN} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
@@ -561,7 +595,7 @@ def build(k):
 {foot(7)}</div>''')
     html='<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترشيح %s</title><style>'%KN+CSS+'</style></head><body>'+''.join(pages)+'</body></html>'
     hp=os.path.join(OUT,f'set{k}.html'); open(hp,'w',encoding='utf-8').write(html)
-    pdf=os.path.join(OUT,f'ترشيح{"2ب" if k==7 else k}.pdf')
+    pdf=os.path.join(OUT,f'ترشيح{ {7:"2ب",8:"3-الجديد"}.get(k,k) }.pdf')
     r=subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','--headless=new','--disable-gpu','--no-sandbox','--no-pdf-header-footer','--print-to-pdf='+pdf,'file://'+hp],capture_output=True,text=True,timeout=180)
     d=open(pdf,'rb').read() if os.path.exists(pdf) else b''
     npg=len(re.findall(rb"/Type\s*/Page[^s]",d))
