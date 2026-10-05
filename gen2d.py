@@ -82,6 +82,20 @@ def edit_p2(p):
     R['نوم ٢']['p']=[[-5.0,4.05],[-1.62,4.05]]+R['نوم ٢']['p'][3:]
     W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + ٣.٤ × ١.٨')
     p['front'][1].update(u0=8.06,u1=9.56,y=4.05,k='win')                                    # window centred on the new front
+    # the open roof piece between them (x -7.0 -> -5.0) comes out too, split between the two bedrooms (his pick):
+    # bedroom 1 takes x -7.0 -> -6.0, bedroom 2 takes x -6.0 -> -5.0 (in front of the bedroom hall's end)
+    p['bays']=[[-11.6,-7.0,5.05],[-7.0,-1.62,4.05]]
+    p['outline3']=[A,[-11.6,5.85],[-11.6,5.05],[-7.0,5.05],[-7.0,4.05],[-1.62,4.05],D2,C2,B2]
+    b1=R['نوم ١']['p']; i=b1.index([-7.0,5.85]); R['نوم ١']['p']=b1[:i]+[[-7.0,4.05],[-6.0,4.05]]+b1[i+2:]
+    R['نوم ٢']['p']=[[-6.0,4.05]]+R['نوم ٢']['p'][1:]+[[-5.0,5.85],[-6.0,5.85]]
+    W['نوم ١'].update(a=area([T(q) for q in R['نوم ١']['p']]),dim='٥.٧ × ٣.٤ + البروز')
+    W['نوم ٢'].update(a=area([T(q) for q in R['نوم ٢']['p']]),dim='٣.٨ × ٣.٤ + البروز')
+    for w in p['walls']:
+        if w['a']==[-6.0,5.96]:                                                             # bedroom 1 / hall wall runs on out to the new front
+            w['a']=[-6.0,4.05]
+            for op in w['op']: op['u0']+=1.91; op['u1']+=1.91
+    p['walls'].append({'a':[-6.0,5.85],'b':[-5.0,5.85],'t':0.12,'op':[]})                  # end of the bedroom hall
+    p['front'][1].update(u0=7.56,u1=9.06)                                                   # bedroom 2's window re-centred on its wider front
     p['extra_labels']=[{'t':'هول النوم','x':-5.5,'y':10.4,'rot':-90}]
 edit_p2(PLANS[2])
 core=SH['core']; whst=SH['whst']
@@ -186,7 +200,8 @@ def wall_lines(F,plan):
     return o
 def ring(F,plan,fl):
     bays=plan.get('bays') or ([plan['bay']] if plan.get('bay') else [])
-    if fl>=3 and bays:                 # rooms that come forward of the 12 m facade
+    if fl>=3 and plan.get('outline3'): out=[T(q) for q in plan['outline3']]
+    elif fl>=3 and bays:                 # rooms that come forward of the 12 m facade
         out=[A]+[q for x0,x1,y in sorted(bays) for q in ((x0,5.85),(x0,y),(x1,y),(x1,5.85))]+[D2,C2,B2]
     else: out=PROJ if fl==2 else BLD
     o=[poly(F,out,fill='none',stroke='#1d2126',sw=3)]
