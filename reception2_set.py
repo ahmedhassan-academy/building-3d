@@ -91,12 +91,29 @@ G.WELL_NOTE[K] = 'ريسبشن طويل على حيطة الجار، والبل�
 G.KNAME[K] = 'ريسبشن ٢'
 G.PDFNAME[K] = '-ريسبشن-٢'
 
+def page_number_overlay(n, N):
+    """a transparent landscape A4 page carrying only "صفحة n من N" (top-left and bottom-left, like the other pages)"""
+    import subprocess
+    t = f'صفحة {G.ar(n, 0)} من {G.ar(N, 0)}'
+    html = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>@page{size:A4 landscape;margin:0}'
+            'html,body{margin:0;padding:0;background:transparent}'
+            '.n{position:absolute;left:12mm;font-family:"Geeza Pro","Al Nile","Noto Naskh Arabic","Arial",sans-serif;font-size:3mm;color:#5b6472}'
+            f'</style></head><body><div class="n" style="top:8mm">{t}</div><div class="n" style="top:201.5mm">{t}</div></body></html>')
+    hp = os.path.join(G.OUT, 'pagenum.html'); pdf = hp[:-5] + '.pdf'
+    open(hp, 'w', encoding='utf-8').write(html)
+    subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '--headless=new', '--disable-gpu', '--no-sandbox',
+                    '--no-pdf-header-footer', '--print-to-pdf=' + pdf, 'file://' + hp], capture_output=True, text=True, timeout=120)
+    return hp, pdf
+
 def with_land_first():
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(G.S), 'pylib'))
     import fitz
     out = os.path.join(G.OUT, f'ترشيح{G.PDFNAME[K]}.pdf')
     doc = fitz.open(); doc.insert_pdf(fitz.open(LAND_PDF)); doc.insert_pdf(fitz.open(out))
+    hp, ov = page_number_overlay(1, p['n_pages'])            # his ask: the land plan page carries number 1 like the rest
+    doc[0].show_pdf_page(doc[0].rect, fitz.open(ov), 0, overlay=True)
+    os.remove(hp); os.remove(ov)
     tmp = out + '.tmp'; doc.save(tmp); os.replace(tmp, out)
     print('final pages', len(fitz.open(out)))
 
