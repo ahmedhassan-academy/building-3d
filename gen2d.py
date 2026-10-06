@@ -638,8 +638,9 @@ def build(k):
     sd_=pl.get('side',0); tside=area([(XR,4.05),(rw2(4.05,sd_),4.05),sh(C2,sd_),C2]) if sd_ else 0
     street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> من شارع ١٢ ≈ {ar(taken,0)} م² (منهم {ar(tbal,1)} م² بلكونة)'+(f' ومن شارع ٦ ≈ {ar(tside,0)} م²' if sd_ else '')+f' · المجموع ≈ {ar(taken+tside,0)} م² في الدور' if pl.get('outline3') else '')
     N=pl.get('n_pages',N); OFF=pl.get('page_offset',0)        # a set can sit behind other pages (e.g. the land plan first)
-    def foot(i): return f'<div class="foot"><span>ترشيح {KN}: {title} · {DATE}</span><span>صفحة {ar(i+OFF,0)} من {ar(N,0)}</span></div>'
-    def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i+OFF,0)} من {ar(N,0)}</div></div>'
+    PN=pl.get('page_num') or (lambda i: i+OFF)                 # or say page by page which number it prints
+    def foot(i): return f'<div class="foot"><span>ترشيح {KN}: {title} · {DATE}</span><span>صفحة {ar(PN(i),0)} من {ar(N,0)}</span></div>'
+    def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(PN(i),0)} من {ar(N,0)}</div></div>'
     pages=[]
     pages.append(f'''<div class="page">{hdr(f'ترشيح {KN}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
 <div class="rules"><b>اللي في الملف ده:</b><ol>

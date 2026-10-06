@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """The building set for "ترشيح ريسبشن ٢" (his pick, 6 Oct 2026), as he asked for it:
-land plan first, then the cover, warehouse floors 1-2, flats on floors 3-4, and one page with the 13 columns,
+the cover, then the land plan, warehouse floors 1-2, flats on floors 3-4, and one page with the 13 columns,
 the distance between every two neighbouring columns, and each column's size and steel.
 (The old column-sections and warehouse-stair pages are left out: "مش مهمين".)
 python3 reception2_set.py  ->  2d/set9.html + 2d/ترشيح-ريسبشن-٢.pdf"""
@@ -10,7 +10,7 @@ import reception5_options as R
 
 K = 9
 G.DATE = '٦ أكتوبر ٢٠٢٦'                             # this set is made today; gen2d's other sets keep their date
-LAND_PDF = os.path.join(G.OUT, 'مخطط-الأرض.pdf')     # one landscape A4 page, goes first
+LAND_PDF = os.path.join(G.OUT, 'مخطط-الأرض.pdf')     # one landscape A4 page, goes second
 p = R.make(next(o for o in R.OPTIONS if o['key'] == 'B'))
 p['cover_note'] = ('ريسبشن طويل ٩.٤ م على حيطة الجار الشمال، من البلكونة على شارع ١٢ لحد المطبخ (≈ ٣٨ م²)، '
                    'والبلكونة ٢.٥ × ١.٥ فيه وبابها ٢ م · نوم ١ (≈ ١٧) ونوم ٢ في الركن على الشارعين (≈ ٢٢) بيفتحوا على دخلة ١ × ١.٦ من الريسبشن، '
@@ -81,7 +81,7 @@ def columns_page(hdr, foot, i):
 <p class="legend">دي أقل حاجة في الكود المصري (خرسانة ٢٥٠ وحديد ٣٦/٥٢). المهندس الإنشائي لازم يحسب الحديد النهائي، خصوصًا عمدان الواجهة بسبب حمل التخزين والبروز.</p>
 {foot(i)}</div>'''
 
-p['page_offset'] = 1                                   # the land plan is page 1
+p['page_num'] = lambda i: 1 if i == 1 else i + 1        # his order: the cover is page 1, the land plan page 2, then the rest
 p['keep_pages'] = 5                                    # cover + floors 1-4
 p['extra_pages'] = [columns_page]
 p['n_pages'] = 1 + 5 + 1
@@ -105,18 +105,18 @@ def page_number_overlay(n, N):
                     '--no-pdf-header-footer', '--print-to-pdf=' + pdf, 'file://' + hp], capture_output=True, text=True, timeout=120)
     return hp, pdf
 
-def with_land_first():
+def with_land_second():
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(G.S), 'pylib'))
     import fitz
     out = os.path.join(G.OUT, f'ترشيح{G.PDFNAME[K]}.pdf')
-    doc = fitz.open(); doc.insert_pdf(fitz.open(LAND_PDF)); doc.insert_pdf(fitz.open(out))
-    hp, ov = page_number_overlay(1, p['n_pages'])            # his ask: the land plan page carries number 1 like the rest
-    doc[0].show_pdf_page(doc[0].rect, fitz.open(ov), 0, overlay=True)
+    doc = fitz.open(out); doc.insert_pdf(fitz.open(LAND_PDF), start_at=1)   # the land plan goes in as page 2
+    hp, ov = page_number_overlay(2, p['n_pages'])            # and carries its number like the rest
+    doc[1].show_pdf_page(doc[1].rect, fitz.open(ov), 0, overlay=True)
     os.remove(hp); os.remove(ov)
     tmp = out + '.tmp'; doc.save(tmp); os.replace(tmp, out)
     print('final pages', len(fitz.open(out)))
 
 if __name__ == '__main__':
     G.build(K)
-    with_land_first()
+    with_land_second()
