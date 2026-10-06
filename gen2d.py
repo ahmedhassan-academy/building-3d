@@ -457,12 +457,13 @@ def wh_stair(F):
     o.append(text(F,'بسطة',*wp(s_top-0.6,om),cls='ts',rot=r))
     o.append(text(F,'تحت السلم: تخزين',*wp(s_bot-1.6,om),cls='ts',rot=r,fill='#3a414b',dy=0))
     return o
-def f2_openings(F):
+def f2_openings(F,plan={}):
     h0,h1=whst['hole']; o0,o1=whst['off0'],whst['off1']; om=(o0+o1)/2; r=rot_along(wp(h0,0),wp(h1,0))
     o=[poly(F,[wp(h0,o0),wp(h1,o0),wp(h1,o1),wp(h0,o1)],fill=CLS['c-gray'][0],stroke='#556070',sw=1,dash='4 3')]
     o.append(text(F,'فتحة السلم ١.٢ × ٣.٤',*wp((h0+h1)/2,om),cls='ts',rot=r))
     o.append(poly(F,[wp(h0-1.2,o0),wp(h0,o0),wp(h0,o1),wp(h0-1.2,o1)],fill='none',stroke='#556070',sw=0.8,dash='3 2'))
     o.append(text(F,'وصول السلم',*wp(h0-0.6,om),cls='ts',rot=r))
+    if plan.get('no_hoist'): return o                    # his ask for the reception proposal (6 Oct 2026): no hoist hatch
     o.append(poly(F,HOIST,fill=CLS['c-purple'][0],stroke=CLS['c-purple'][1],sw=1))
     cx=sum(p[0] for p in HOIST)/4; cy=sum(p[1] for p in HOIST)/4
     o.append(text(F,'فتحة ونش ١.٢ × ١.٢',cx,cy-0.95,cls='ts',fill=CLS['c-purple'][1]))
@@ -475,7 +476,7 @@ def svg_open(vb='0 0 680 650',title=''): return f'<svg viewBox="{vb}" role="img"
 def f2_poly(plan):
     d=plan.get('side',0)
     return [(XL,4.05),(rw2(4.05,d),4.05),sh(P1,d),P2,P3,B2,A] if d else F2
-def f2_area(plan): return area(f2_poly(plan))-1.2*3.4-area(HOIST)-area(DUCT)
+def f2_area(plan): return area(f2_poly(plan))-1.2*3.4-(0 if plan.get('no_hoist') else area(HOIST))-area(DUCT)
 def wh_svg(plan,fl):
     F=FR; o=[svg_open(title='مسقط المخزن')]+site(F)
     d=plan.get('side',0)
@@ -490,7 +491,7 @@ def wh_svg(plan,fl):
         sd=core['street_door']; a=upt(P1,C2,sd['t0']); b=upt(P1,C2,sd['t1'])
         o.append(line(F,a,b,'#ffffff',4)); o.append(leaf(F,a,upt((0,0),(C2[0]-P1[0],C2[1]-P1[1]),1),(-U[0],-U[1]),sd['t1']-sd['t0']))
         o.append(text(F,'مدخل الشقق ١.١٠',*mid(a,b,0.9,-0.1),cls='ts',rot=rot_along(P1,C2),fill=DOOR))
-    o+=wh_stair(F) if fl==1 else f2_openings(F)
+    o+=wh_stair(F) if fl==1 else f2_openings(F,plan)
     o+=duct(F); o+=columns(F,plan,fl)
     o.append(text(F,f'مساحة فاضية ≈ {ar(G_AREA if fl==1 else f2_area(plan),0)} م²',-6.6,10.6,cls='th'))
     o.append(text(F,'ارتفاع ٣.٧٥ م',-6.6,10.6,cls='ts',dy=16))
@@ -642,13 +643,13 @@ def build(k):
     pages.append(f'''<div class="page">{hdr(f'ترشيح {KN}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
 <div class="rules"><b>اللي في الملف ده:</b><ol>
 <li><b>الدور الأول (الأرضي):</b> مخزن فاضي ≈ {ar(G_AREA,0)} م²، باب رول {ar(dw)} م على شارع الـ ١٢، سلم داخلي للدور الثاني، ومجرى مواسير ٤٠ × ٦٠ في الضهر. مفيش منور.</li>
-<li><b>الدور الثاني:</b> مخزن كامل ≈ {ar(f2_area(pl),0)} م² مع بروز ١.٨٠ م فوق شارع ١٢{(' و '+ar(pl['side'],2)+' م فوق شارع ٦') if pl.get('side') else ''}، فتحة السلم ١.٢ × ٣.٤ وفتحة ونش ١.٢ × ١.٢.</li>
+<li><b>الدور الثاني:</b> مخزن كامل ≈ {ar(f2_area(pl),0)} م² مع بروز ١.٨٠ م فوق شارع ١٢{(' و '+ar(pl['side'],2)+' م فوق شارع ٦') if pl.get('side') else ''}، فتحة السلم ١.٢ × ٣.٤{'' if pl.get('no_hoist') else ' وفتحة ونش ١.٢ × ١.٢'}.</li>
 <li><b>الدور الثالث والرابع:</b> شقة في كل دور بنفس التقسيم (≈ {ar(tot,0)} م² صافي).</li>
 <li><b>العمدان:</b> {sysname}. {cnt}</li>
 <li><b>سلم المخزن:</b> مستقيم ٢٢ درجة، عرض ١.٢٠ م، طول ٦.٩ م موازي لحيطة الجار الشمال.</li></ol></div>
 <h3>مساحات الشقة (الدور الثالث = الرابع)</h3>
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
-<div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
+<div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم{'' if pl.get('no_hoist') else ' · بنفسجي = فتحة الونش'}.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
 {'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة واخدة المدخل والهول من غير حيطان (≈ ٢٥ م²)، علشان الضيوف يدخلوا عليها من باب الشقة على طول.' if k in (7,8) else '')+(' · مكان نوم ١ ونوم ٢ بقى ٣ أوض جنب بعض على شارع ١٢ (≈ ١٧ و ١٤ و ٢٥ م²)، نوم ١ بتفتح على الصالة، ونوم ٢ ونوم ٤ على دخلة صغيرة ١ × ١ م من الصالة، والبلكونة في نوم ٢ · حيطة نوم ٣ على نفس خط الصالة (نوم ٣ ≈ ١٦ م²).' if k==8 else '')+'</div>' if k in (2,7,8) else (f'<div class="fact"><b>التقسيم:</b> {pl["cover_note"]}</div>' if pl.get('cover_note') else '')}
 <p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if pl.get('outline3') else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
