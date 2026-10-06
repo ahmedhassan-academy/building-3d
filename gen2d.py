@@ -623,8 +623,9 @@ h3{font-size:4.2mm;margin:4mm 0 2mm;font-weight:700;color:#1F5FBF}
 .foot{position:absolute;bottom:0;left:0;right:0;border-top:0.2mm solid #b9bec7;padding-top:1.5mm;font-size:2.8mm;color:#5b6472;display:flex;justify-content:space-between}
 svg .t{font-size:11px;fill:#1d2126} svg .ts{font-size:9px;fill:#3a414b} svg .th{font-size:13px;font-weight:700;fill:#1d2126}
 '''
+KNAME={7:'٢ب',8:'٣'}; PDFNAME={7:'2ب',8:'3-الجديد'}     # printed name and file name of the newer proposals (other scripts add theirs)
 def build(k):
-    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7; KN={7:'٢ب',8:'٣'}.get(k,ar(k,0))
+    pl=PLANS[k]; title=pl['title'].split(': ',1)[1]; sysname,cnt,sizes=COLINFO[k]; N=7; KN=KNAME.get(k,ar(k,0))
     rows=[r for r in pl['rows'] if r['n']!='منور']
     big=[r for r in rows if r['a']>=5]; small=[r for r in rows if r['a']<5]
     tr=''.join(f'<tr><td>{r["n"]}</td><td class="n">{r.get("dim") or ar(r["w"])+" × "+ar(r["h"])}</td><td class="n">{ar(r["a"])}</td></tr>' for r in big)
@@ -649,8 +650,8 @@ def build(k):
 <table><tr><th>الأوضة</th><th>المقاس (م)</th><th>م²</th></tr>{tr}<tr><th>الصافي</th><th></th><th class="n">≈ {ar(tot,0)}</th></tr></table>
 <div class="fact" style="margin-top:4mm"><b>الرموز:</b> <span style="color:{COL_WALL}">■</span> عمود مخفي في حيطة خارجية · <span style="color:{COL_CORE}">■</span> ركن بيت السلم · <span style="color:{COL_IN}">■</span> عمود جوه المخزن · <span style="color:#8A4B12">▬</span> كمرة (المتقطع = كمرة تحويل) · <span style="color:{DOOR}"><b>▬</b></span> باب (القوس المتقطع = اتجاه الفتح، والخط المزدوج = باب زجاج منزلق، والمتقطع العريض = باب المخزن الرول) · <span style="color:#1F5FBF">▬</span> شباك · أخضر = بروز الدور الثاني · رمادي = فتحة السلم · بنفسجي = فتحة الونش.</div>
 <div class="fact"><b>التعديلات عن النسخة الأولى:</b> باب الشقة بقى ٠.٩٠ بجوغ ٦٠ سم في حيطة الحمام · سلم المخزن موازي لحيطة الجار المايلة (مش على محور الورقة) · فتحة السلم في سقف الأرضي بتبدأ من آخر درجة وترجع ٣.٤ م زي القطاع.</div>
-{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة واخدة المدخل والهول من غير حيطان (≈ ٢٥ م²)، علشان الضيوف يدخلوا عليها من باب الشقة على طول.' if k in (7,8) else '')+(' · مكان نوم ١ ونوم ٢ بقى ٣ أوض جنب بعض على شارع ١٢ (≈ ١٧ و ١٤ و ٢٥ م²)، نوم ١ بتفتح على الصالة، ونوم ٢ ونوم ٤ على دخلة صغيرة ١ × ١ م من الصالة، والبلكونة في نوم ٢ · حيطة نوم ٣ على نفس خط الصالة (نوم ٣ ≈ ١٦ م²).' if k==8 else '')+'</div>' if k in (2,7,8) else ''}
-<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if k in (2,7,8) else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
+{'<div class="fact"><b>التعديلات الجديدة (٥ أكتوبر):</b> شلنا الغسيل (دخل في الصالة) والكرار (دخل في المنور، بقى عرضه ٢.٥ م) · هول خاص للنوم من المدخل لحد الواجهة، والتلات أوض بيفتحوا عليه · واجهة الشقة كلها طلعت لقدام ١.٨٠ م ودخلت في نوم ١ ونوم ٢ · بلكونة واحدة ٢.٥ × ١.٥ في نوم ١، ونوم ٢ ليها شباك · الأبواب برتقالي بخط عريض.'+(' · الصالة واخدة المدخل والهول من غير حيطان (≈ ٢٥ م²)، علشان الضيوف يدخلوا عليها من باب الشقة على طول.' if k in (7,8) else '')+(' · مكان نوم ١ ونوم ٢ بقى ٣ أوض جنب بعض على شارع ١٢ (≈ ١٧ و ١٤ و ٢٥ م²)، نوم ١ بتفتح على الصالة، ونوم ٢ ونوم ٤ على دخلة صغيرة ١ × ١ م من الصالة، والبلكونة في نوم ٢ · حيطة نوم ٣ على نفس خط الصالة (نوم ٣ ≈ ١٦ م²).' if k==8 else '')+'</div>' if k in (2,7,8) else (f'<div class="fact"><b>التقسيم:</b> {pl["cover_note"]}</div>' if pl.get('cover_note') else '')}
+<p class="legend">{'البلكونة ١.٥ م وبروز الأوض ١.٨٠ م والمنور ٢.٥ × ١.١ حسب طلبك. القانون بيسمح ببلكونة ١.٢٠ م وبروز مقفول ٦٠ سم بس، ومنور المطبخ أقل حاجة ٢.٥ × ٣ م.' if pl.get('outline3') else 'البروز ١.٨٠ م والمنور ١ × ١.٥ حسب طلبك، والقانون بيسمح ببروز مفتوح ١.٢٥ م ومنور ٢.٥ م عرض.'} المقاسات تقريبية والحساب الإنشائي النهائي للمهندس الإنشائي.</p>
 {foot(1)}</div>''')
     for fl,ttl in ((1,'الدور الأول: مخزن'),(2,'الدور الثاني: مخزن كامل + بروز')):
         pages.append(f'''<div class="page">{hdr(ttl,f'ترشيح {KN} · {sysname} · نفس عمدان الشقق فوق',fl+1)}
@@ -678,7 +679,7 @@ def build(k):
 {foot(7)}</div>''')
     html='<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترشيح %s</title><style>'%KN+CSS+'</style></head><body>'+''.join(pages)+'</body></html>'
     hp=os.path.join(OUT,f'set{k}.html'); open(hp,'w',encoding='utf-8').write(html)
-    pdf=os.path.join(OUT,f'ترشيح{ {7:"2ب",8:"3-الجديد"}.get(k,k) }.pdf')
+    pdf=os.path.join(OUT,f'ترشيح{PDFNAME.get(k,k)}.pdf')
     r=subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','--headless=new','--disable-gpu','--no-sandbox','--no-pdf-header-footer','--print-to-pdf='+pdf,'file://'+hp],capture_output=True,text=True,timeout=180)
     d=open(pdf,'rb').read() if os.path.exists(pdf) else b''
     npg=len(re.findall(rb"/Type\s*/Page[^s]",d))
