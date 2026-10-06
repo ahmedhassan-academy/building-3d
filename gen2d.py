@@ -637,8 +637,9 @@ def build(k):
     tbal=sum((x2-x1)*bd0 for x1,x2 in pl['balc']) if pl.get('outline3') else 0
     sd_=pl.get('side',0); tside=area([(XR,4.05),(rw2(4.05,sd_),4.05),sh(C2,sd_),C2]) if sd_ else 0
     street=(f' · <b>اللي اتاخد من الشارع (قدام الخط الأحمر):</b> من شارع ١٢ ≈ {ar(taken,0)} م² (منهم {ar(tbal,1)} م² بلكونة)'+(f' ومن شارع ٦ ≈ {ar(tside,0)} م²' if sd_ else '')+f' · المجموع ≈ {ar(taken+tside,0)} م² في الدور' if pl.get('outline3') else '')
-    def foot(i): return f'<div class="foot"><span>ترشيح {KN}: {title} · {DATE}</span><span>صفحة {ar(i,0)} من {ar(N,0)}</span></div>'
-    def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i,0)} من {ar(N,0)}</div></div>'
+    N=pl.get('n_pages',N); OFF=pl.get('page_offset',0)        # a set can sit behind other pages (e.g. the land plan first)
+    def foot(i): return f'<div class="foot"><span>ترشيح {KN}: {title} · {DATE}</span><span>صفحة {ar(i+OFF,0)} من {ar(N,0)}</span></div>'
+    def hdr(t,sub,i,h1=False): return f'<div class="hdr"><div>{"<h1>" if h1 else "<h2>"}{t}{"</h1>" if h1 else "</h2>"}<p class="sub">{sub}</p></div><div class="pg">صفحة {ar(i+OFF,0)} من {ar(N,0)}</div></div>'
     pages=[]
     pages.append(f'''<div class="page">{hdr(f'ترشيح {KN}: {title}','العمارة كاملة: مخزن دورين + شقتين · أرض ناصية على شارع ١٢ م وشارع ٦ م · الجزء المبني ١٠٥ م² · '+DATE,1,True)}
 <div class="rules"><b>اللي في الملف ده:</b><ol>
@@ -678,6 +679,7 @@ def build(k):
 <div class="fact"><b>العرض:</b> ١.٢٠ م صافي، درابزين ٩٠ سم</div><div class="fact"><b>فتحة السقف:</b> ١.٢٠ × ٣.٤٠ م، ارتفاع صافي فوق أي درجة ≥ ٢.١٠ م</div>
 <div class="fact"><b>اللي بياخده من الأرضي:</b> صفر، تحته تخزين</div><div class="fact"><b>اللي بياخده من الدور الثاني:</b> ≈ ٤ م² (الفتحة)</div></div>
 {foot(7)}</div>''')
+    keep=pl.get('keep_pages',len(pages)); pages=pages[:keep]+[f(hdr,foot,j) for j,f in enumerate(pl.get('extra_pages',[]),keep+1)]
     html='<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترشيح %s</title><style>'%KN+CSS+'</style></head><body>'+''.join(pages)+'</body></html>'
     hp=os.path.join(OUT,f'set{k}.html'); open(hp,'w',encoding='utf-8').write(html)
     pdf=os.path.join(OUT,f'ترشيح{PDFNAME.get(k,k)}.pdf')
