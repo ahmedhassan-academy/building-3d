@@ -176,7 +176,7 @@ const M={
   kit: std({map:T.kit,roughness:0.4}),
   concrete: std({map:T.concrete,roughness:0.85}),
   plaster: std({map:T.plaster,roughness:0.9}),
-  ceiling: std({color:0xF7F6F2,roughness:0.95}),
+  ceiling: std({color:0xF7F6F2,roughness:0.95,side:THREE.DoubleSide}),
   facade: std({map:T.facade,roughness:0.85}),
   facadeWH: std({map:T.facadeWH,roughness:0.9}),
   wood: std({map:T.wood,roughness:0.55}),
@@ -234,7 +234,7 @@ function slabMesh(pts,top,holes,matTop,matBottom){ // slab with a ceiling materi
   // ExtrudeGeometry cap group covers both caps; we recolor via a second mesh for the ceiling instead
   m.rotation.x=-Math.PI/2; m.position.y=top-SLAB; m.castShadow=true; m.receiveShadow=true;
   const g2=new THREE.ShapeGeometry(shape(pts,holes)); const c=new THREE.Mesh(g2,matBottom||M.ceiling);
-  c.rotation.x=Math.PI/2; c.position.y=top-SLAB-0.005; c.receiveShadow=true;
+  c.rotation.x=-Math.PI/2; c.position.y=top-SLAB-0.005;   // same turn as the slab (+PI/2 mirrored it over the 12 m street as a floating plane) c.receiveShadow=true;
   const grp=new THREE.Group(); grp.add(m,c); return grp;
 }
 function floorFinish(pts,z,mat,holes){ const m=prism(pts,z,0.02,mat,holes,{cast:false}); return m; }
@@ -569,7 +569,7 @@ function innerRect(poly){ // largest-ish axis rectangle inside the polygon (shri
   return {x0,x1,y0,y1,w:x1-x0,h:y1-y0};
 }
 function clipY(poly,y,keepBelow){ // the part of a polygon below (or above) the line y (Sutherland-Hodgman, one edge)
-  const inn=p=>keepBelow?p[1]<=y:p[1]>=y, out=[];
+  const inn=p=>keepBelow?p[1]<y-1e-9:p[1]>y+1e-9, out=[];   // points on the line count as outside, so an edge lying on it adds no sliver
   for(let i=0;i<poly.length;i++){ const a=poly[i],b=poly[(i+1)%poly.length];
     if(inn(a)) out.push(a); if(inn(a)!==inn(b)){ const t=(y-a[1])/(b[1]-a[1]); out.push([a[0]+(b[0]-a[0])*t,y]); } }
   return out; }
@@ -817,6 +817,7 @@ if(U.get('furn')==='0'){ furnOn=false; tF.setAttribute('aria-pressed','false'); 
 if(U.has('f')){ floorSel=+U.get('f'); floorsEl.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v==String(floorSel)))); }
 if(U.get('labels')==='0'){ labOn=false; tL.setAttribute('aria-pressed','false'); }
 applyVisibility(); setView(U.get('v')||'s12');
+if(U.get('ui')==='0'){ for(const id of ['top','side','hint','hud','joy','mobmenu','cross']) document.getElementById(id).style.display='none'; }   // a clean picture (renders for the PDF)
 if(U.has('cam')){ const c=U.get('cam').split(',').map(Number); if(c.length===6&&c.every(Number.isFinite)){ camera.position.set(c[0],c[1],c[2]); orbit.target.set(c[3],c[4],c[5]); } }   // a fixed view for a shared link: ?cam=x,y,z,tx,ty,tz
 requestAnimationFrame(()=>{ document.getElementById('load').remove(); frame(); });
 </script>
