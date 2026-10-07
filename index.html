@@ -167,6 +167,11 @@ const T={
   soil: tex(512,(g,s)=>{ g.fillStyle='#8F7A5A'; g.fillRect(0,0,s,s); noise(g,s,0,0.2,8000); },3.0),
   nb: tex(512,(g,s)=>{ g.fillStyle='#CFC3AE'; g.fillRect(0,0,s,s); noise(g,s,0,0.06,2000); g.fillStyle='#2E3A48'; g.fillRect(s*0.3,s*0.28,s*0.4,s*0.45); g.fillStyle='rgba(255,255,255,.18)'; g.fillRect(s*0.3,s*0.28,s*0.4,s*0.1); g.fillStyle='#8E8577'; g.fillRect(s*0.27,s*0.72,s*0.46,s*0.03); },3.2),
   stair: tex(512,(g,s)=>{ g.fillStyle='#B8B2A8'; g.fillRect(0,0,s,s); noise(g,s,0,0.14,7000); },1.5),
+  stoneW: tex(512,(g,s)=>{ g.fillStyle='#EEEAE2'; g.fillRect(0,0,s,s); noise(g,s,0,0.05,2500); g.strokeStyle='#C9C3B6'; g.lineWidth=3;
+    for(let r=0;r<4;r++){ const y=r*s/4; g.beginPath(); g.moveTo(0,y); g.lineTo(s,y); g.stroke(); const off=(r%2)*s/4; for(let c=0;c<2;c++){ const x=off+c*s/2; g.beginPath(); g.moveTo(x,y); g.lineTo(x,y+s/4); g.stroke(); } } },1.8),
+  aliva: tex(512,(g,s)=>{ g.fillStyle='#C7CEDA'; g.fillRect(0,0,s,s); noise(g,s,0,0.04,2000); g.strokeStyle='rgba(110,120,145,.35)'; g.lineWidth=2; for(let r=0;r<8;r++){ const y=r*s/8; g.beginPath(); g.moveTo(0,y); g.lineTo(s,y); g.stroke(); } },2.0),
+  slate: tex(512,(g,s)=>{ g.fillStyle='#2F4C80'; g.fillRect(0,0,s,s); noise(g,s,0,0.08,3000); g.strokeStyle='rgba(15,25,50,.55)'; g.lineWidth=2;
+    for(let r=0;r<8;r++){ const y=r*s/8; g.beginPath(); g.moveTo(0,y); g.lineTo(s,y); g.stroke(); const off=(r%2)*s/12; for(let c=0;c<6;c++){ const x=off+c*s/6; g.beginPath(); g.moveTo(x,y); g.lineTo(x,y+s/8); g.stroke(); } } },1.6),
   roof: tex(512,(g,s)=>{ g.fillStyle='#A9A398'; g.fillRect(0,0,s,s); noise(g,s,0,0.1,5000); g.strokeStyle='#8A8478'; g.lineWidth=2; for(let i=0;i<=2;i++){ g.beginPath(); g.moveTo(i*s/2,0); g.lineTo(i*s/2,s); g.moveTo(0,i*s/2); g.lineTo(s,i*s/2); g.stroke(); } },2.0),
 };
 const std=(o)=>new THREE.MeshStandardMaterial(o);
@@ -207,6 +212,10 @@ const M={
   pants: std({color:0x2B2B30,roughness:0.95}),
   shutter: std({color:0x7C8288,roughness:0.5,metalness:0.7}),
   rail: std({color:0x2E3135,roughness:0.5,metalness:0.7}),
+  stoneW: std({map:T.stoneW,roughness:0.8}),
+  aliva: std({map:T.aliva,roughness:0.85}),
+  slate: std({map:T.slate,roughness:0.5,metalness:0.1,side:THREE.DoubleSide}),
+  trim: std({color:0xFAFAF6,roughness:0.5}),
 };
 
 // ---------------- geometry helpers (plan x,y -> world x,-y) ----------------
@@ -376,15 +385,18 @@ function build(k){
   const UPSLAB=NEW?P.f2_slab:SH.SLAB;                                  // floor-4 slab and roof
   const WELL=NEW?P.well:SH.WELL;
   const HOIST=P.no_hoist?null:SH.HOIST;
+  const ALIVA=P.facade==='aliva';                                      // his pick (7 Oct 2026): the Aliva / Mountain View look on the street sides
+  const F2W=P.f2_wins||[[-11.2,-9.2],[-7.9,-5.9],[-4.6,-2.6]];         // floor-2 warehouse windows on the 12 m street
+  const TALL=o=>(ALIVA&&o.k==='win')?{z0:0.6,z1:2.3}:{};               // classic tall windows on the flats
   const SLB=SH.SLAB;                                                  // BLD minus the core
   const outerN=(poly,i)=>inwardNormal(poly,i);
   const H_WH=LV.f2-SLAB, H_FL=3.0-SLAB;
   // ---- exterior ring per level ----
   const ringLevels=[
-    {z:0,h:H_WH,poly:BLD,lv:0,mat:M.facadeWH},
-    {z:LV.f2,h:H_WH,poly:NEW?P.ring_f2:[[-12.12,4.05],[-1.62,4.05],D2,C2,B2,A],lv:1,mat:M.facadeWH},
-    {z:LV.f3,h:H_FL,poly:NEW?P.outline3:BLD,lv:2,mat:M.facade},
-    {z:LV.f4,h:H_FL,poly:NEW?P.outline3:BLD,lv:3,mat:M.facade},
+    {z:0,h:H_WH,poly:BLD,lv:0,mat:ALIVA?M.stoneW:M.facadeWH},
+    {z:LV.f2,h:H_WH,poly:NEW?P.ring_f2:[[-12.12,4.05],[-1.62,4.05],D2,C2,B2,A],lv:1,mat:ALIVA?M.aliva:M.facadeWH},
+    {z:LV.f3,h:H_FL,poly:NEW?P.outline3:BLD,lv:2,mat:ALIVA?M.aliva:M.facade},
+    {z:LV.f4,h:H_FL,poly:NEW?P.outline3:BLD,lv:3,mat:ALIVA?M.aliva:M.facade},
   ];
   const segU=(p,a,b)=>((p[0]-a[0])*(b[0]-a[0])+(p[1]-a[1])*(b[1]-a[1]))/Math.hypot(b[0]-a[0],b[1]-a[1]);
   const streetDoor=(()=>{ const t0=SH.core.street_door.t0,t1=SH.core.street_door.t1; const V=[(C2[0]-P1[0])/3,(C2[1]-P1[1])/3];
@@ -400,9 +412,9 @@ function build(k){
       const byX=(x0,x1,o)=>{ const lo=Math.min(a[0],b[0])-0.05, hi=Math.max(a[0],b[0])+0.05; if(x0<lo||x1>hi) return null; const u0=(x0-a[0])*dir, u1=(x1-a[0])*dir; return {...o,u0:Math.min(u0,u1),u1:Math.max(u0,u1)}; };
       const isRightNew=NEW&&R.lv>=1&&same(a,P.ring_f2[1])&&same(b,P.ring_f2[2]);
       if(NEW&&R.lv>=1){
-        if(R.lv===1&&horizY!==null&&Math.abs(horizY-4.05)<0.01){ for(const [x0,x1] of [[-11.2,-9.2],[-7.9,-5.9],[-4.6,-2.6]]){ const o=byX(x0,x1,{z0:1.0,z1:2.5,k:'win'}); if(o) ops.push(o); } }
-        if(R.lv>=2&&horizY!==null){ for(const f of P.front){ if(Math.abs((f.y??5.85)-horizY)>0.01) continue; const o=byX(A[0]+f.u0,A[0]+f.u1,f); if(o) ops.push(o); } }
-        if(isRightNew){ const off=P.right_off; if(R.lv===1) ops.push({u0:1.2+off,u1:2.4+off,z0:2.4,z1:3.2,k:'win'},{u0:3.4+off,u1:4.6+off,z0:2.4,z1:3.2,k:'win'}); else for(const o of P.right) ops.push({...o,u0:o.u0+off,u1:o.u1+off}); }
+        if(R.lv===1&&horizY!==null&&Math.abs(horizY-4.05)<0.01){ for(const [x0,x1] of F2W){ const o=byX(x0,x1,{z0:1.0,z1:2.5,k:'win'}); if(o) ops.push(o); } }
+        if(R.lv>=2&&horizY!==null){ for(const f of P.front){ if(Math.abs((f.y??5.85)-horizY)>0.01) continue; const o=byX(A[0]+f.u0,A[0]+f.u1,{...f,...TALL(f)}); if(o) ops.push(o); } }
+        if(isRightNew){ const off=P.right_off; if(R.lv===1) ops.push({u0:1.2+off,u1:2.4+off,z0:2.4,z1:3.2,k:'win'},{u0:3.4+off,u1:4.6+off,z0:2.4,z1:3.2,k:'win'}); else for(const o of P.right) ops.push({...o,u0:o.u0+off,u1:o.u1+off,...TALL(o)}); }
       }
       if(R.lv===0&&isFront){ ops.push({u0:P.whdoor[0]-A[0],u1:P.whdoor[1]-A[0],z0:0,z1:3.2,k:'wh'}); }
       if(!NEW&&R.lv===1&&isProjFront){ for(const [x0,x1] of [[-11.2,-9.2],[-7.9,-5.9],[-4.6,-2.6]]) ops.push({u0:x0+12.12,u1:x1+12.12,z0:1.0,z1:2.5,k:'win'}); }
@@ -417,8 +429,10 @@ function build(k){
           const rail1=box(0.08,3.2,0.12,M.frame,A_.a[0],-A_.a[1],R.z+1.6,A_.rot), rail2=box(0.08,3.2,0.12,M.frame,A_.b[0],-A_.b[1],R.z+1.6,A_.rot); bld.add(rail1,rail2);
           const lab=label(`باب المخزن ${ar(L)} × ٣.٢ م (مفتوح)`,cx,cy-0.2,R.z+3.9,4.2,0); bld.add(lab); }
       }
+      if(ALIVA) for(const o of ops) if(o._abs) trimOpening(o,R.z,R.lv);
     }
   }
+  if(ALIVA) alivaBands(P,BLD);
   // ---- core walls (the two faces inside the building) per level, + bulkhead ----
   const coreLv=[{z:0,h:H_WH,lv:0},{z:LV.f2,h:H_WH,lv:1},{z:LV.f3,h:H_FL,lv:2},{z:LV.f4,h:H_FL,lv:3},{z:LV.roof,h:2.6,lv:4}];
   for(const C of coreLv){
@@ -464,7 +478,9 @@ function build(k){
   { const d=SH.DUCT; const dm=prism(d,0,LV.f3,M.plaster,null); dm.userData.lv=0; bld.add(dm); for(let i=0;i<4;i++) addCol(d[i],d[(i+1)%4],0,LV.f3); }
   // roof parapet 1.0 m on the free edges (front, right) + low wall on neighbour sides
   { const n=UPSLAB.length; for(let i=0;i<n;i++){ const a=UPSLAB[i],b=UPSLAB[(i+1)%n]; const onCore=inside([(a[0]+b[0])/2+inwardNormal(UPSLAB,i)[0]*-0.2,(a[1]+b[1])/2+inwardNormal(UPSLAB,i)[1]*-0.2],CORE_UP);
-      if(onCore) continue; bld.add(wall(a,b,0.2,LV.roof,1.0,[],{out:M.facade,in:M.plaster},inwardNormal(UPSLAB,i),1,4)); } }
+      if(onCore) continue; if(ALIVA&&NEW&&i<=1) continue;              // the street sides get the mansard instead
+      bld.add(wall(a,b,0.2,LV.roof,1.0,[],{out:M.facade,in:M.plaster},inwardNormal(UPSLAB,i),1,4)); } }
+  if(ALIVA&&NEW) alivaMansard(P);
   // ---- interior columns (warehouse floors 40x40, flats 30x30) ----
   for(const c of P.cols_in){ for(const [z,h,s,lv] of [[0,H_WH,0.4,0],[LV.f2,H_WH,0.4,1],[LV.f3,H_FL,0.3,2],[LV.f4,H_FL,0.3,3]]){ const m=box(s,h,s,M.plaster,c[0],-c[1],z+h/2,0); m.userData.lv=lv; bld.add(m); if(lv<2) for(const [p,q] of [[[c[0]-s/2,c[1]-s/2],[c[0]+s/2,c[1]-s/2]],[[c[0]+s/2,c[1]-s/2],[c[0]+s/2,c[1]+s/2]],[[c[0]+s/2,c[1]+s/2],[c[0]-s/2,c[1]+s/2]],[[c[0]-s/2,c[1]+s/2],[c[0]-s/2,c[1]-s/2]]]) addCol(p,q,z,z+h); } }
   // highlighted columns: every column of the proposal, in red, poking 3 cm out of the walls (toggle)
@@ -530,7 +546,7 @@ function build(k){
     // the well: on floor 3 its floor is the slab; the shaft walls come from the rooms around it. Give it a sky feel: nothing else.
     // balconies
     if(P.balc_y0) for(const [x1,x2] of P.balc){ // recessed: its floor is the slab, its side and back walls are outside walls; a parapet on the open front
-      bld.add(wall([x1,4.05],[x2,4.05],0.12,z,1.05,[],{out:M.facade,in:M.plaster},null,0,lv));
+      if(ALIVA) balustrade([x1,4.05],[x2,4.05],z,lv); else bld.add(wall([x1,4.05],[x2,4.05],0.12,z,1.05,[],{out:M.facade,in:M.plaster},null,0,lv));
       bld.add(label(`بلكونة ${ar(x2-x1)} × ${ar(P.balc_d||1.5,2)}`,(x1+x2)/2,(4.05+P.balc_y0)/2,z+1.5,3.2,lv)); }
     else for(const [x1,x2] of P.balc){ const poly=[[x1,5.85],[x2,5.85],[x2,4.05],[x1,4.05]];
       if(lv===3){ const sl=slabMesh(poly,z,null,M.tile); sl.traverse(m=>m.userData.lv=lv); bld.add(sl); SURF.push({poly,z,lv}); }
@@ -556,6 +572,84 @@ function build(k){
   for(const [z,lv] of [[0,0],[LV.f2,1]]){ for(const [x,y] of [[-8.5,8],[-3.5,8],[-8.5,13],[-4,12.5]]){ const pl=new THREE.PointLight(0xFFF3E0,30,12,2); pl.position.set(x,z+3.3,-y); pl.userData.lv=lv; pl.userData.light=true; bld.add(pl); } }
   bld.add(person(-7.2,9.5,0,0.6,0,[M.fabric2,M.pants]));
   applyVisibility();
+}
+// ---------------- Aliva facade pieces (his pick, 7 Oct 2026) ----------------
+const UP=new THREE.Vector3(0,1,0);
+function put4(m,lv){ m.traverse(x=>{ x.userData.lv=lv; if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } }); bld.add(m); return m; }
+function wpos(p,z){ return new THREE.Vector3(p[0],z,-p[1]); }
+function onFace(A_,u,z,w,h,d,mat,lv,out=0){ // a box on the outside face of a wall opening: u along the wall from the opening centre, out = extra distance outward
+  const cx=(A_.a[0]+A_.b[0])/2, cy=(A_.a[1]+A_.b[1])/2, o=A_.t/2+d/2+out;
+  return put4(box(w,h,d,mat,cx+A_.ux*u-A_.inw[0]*o,-(cy+A_.uy*u-A_.inw[1]*o),z,A_.rot),lv); }
+function gable(A_,u,z,w,h,d,mat,lv,out=0){ // a small triangle (pediment) on the outside face
+  const sh=new THREE.Shape(); sh.moveTo(-w/2,0); sh.lineTo(w/2,0); sh.lineTo(0,h); sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:d,bevelEnabled:false}); g.translate(0,0,-d/2);
+  const m=new THREE.Mesh(g,mat); const cx=(A_.a[0]+A_.b[0])/2, cy=(A_.a[1]+A_.b[1])/2, o=A_.t/2+d/2+out;
+  m.position.set(cx+A_.ux*u-A_.inw[0]*o,z,-(cy+A_.uy*u-A_.inw[1]*o)); m.rotation.y=A_.rot; return put4(m,lv); }
+function trimOpening(o,z0,lv){
+  const A_=o._abs, L=Math.hypot(A_.b[0]-A_.a[0],A_.b[1]-A_.a[1]), W=M.trim;
+  if(o.k==='win'||o.k==='slide'){ const zb=z0+o.z0, zt=z0+o.z1;
+    onFace(A_,-L/2-0.08,(zb+zt)/2,0.16,zt-zb+0.16,0.07,W,lv); onFace(A_,L/2+0.08,(zb+zt)/2,0.16,zt-zb+0.16,0.07,W,lv);
+    onFace(A_,0,zt+0.09,L+0.34,0.18,0.08,W,lv);
+    if(o.z0>0.05) onFace(A_,0,zb-0.05,L+0.42,0.09,0.16,W,lv);
+    if(lv===3&&o.k==='win') gable(A_,0,zt+0.18,L+0.5,0.3,0.1,W,lv); }
+  if(o.k==='wh'){ for(const s of [-1,1]) onFace(A_,s*(L/2+0.2),z0+1.7,0.4,3.4,0.12,W,lv); }
+  if(o.k==='door'){ const r=L/2+0.12;
+    for(const s of [-1,1]) onFace(A_,s*(L/2+0.11),z0+1.1,0.22,2.2,0.1,W,lv);
+    const cx=(A_.a[0]+A_.b[0])/2, cy=(A_.a[1]+A_.b[1])/2, oo=A_.t/2+0.05;
+    const arch=new THREE.Mesh(new THREE.TorusGeometry(r,0.09,8,28,Math.PI),W); arch.position.set(cx-A_.inw[0]*oo,z0+2.2,-(cy-A_.inw[1]*oo)); arch.rotation.y=A_.rot; put4(arch,lv);
+    const fan=new THREE.Mesh(new THREE.CircleGeometry(L/2,24,0,Math.PI),M.glass); fan.position.set(cx-A_.inw[0]*(A_.t/2+0.01),z0+2.2,-(cy-A_.inw[1]*(A_.t/2+0.01))); fan.rotation.y=A_.rot; put4(fan,lv);
+    onFace(A_,0,z0+2.2+r+0.1,0.26,0.32,0.14,W,lv); }   // keystone
+}
+function band(p,q,z,h,d,lv,mat){ // a straight band on the outside of the edge p->q (polygon counter-clockwise: outside is to the right)
+  const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,ox=uy,oy=-ux, rot=Math.atan2(dy,dx);
+  const c=[(p[0]+q[0])/2+ox*d/2,(p[1]+q[1])/2+oy*d/2];
+  return put4(box(L+2*d,h,d,mat||M.trim,c[0],-c[1],z,rot),lv); }
+function corbel(p,q,u,depth,z0,lv){ // a white bracket under a projection, on the outside face of p->q at distance u
+  const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,ox=uy,oy=-ux, H=0.75, Wd=0.3;
+  const sh=new THREE.Shape(); sh.moveTo(0,0); sh.lineTo(0,H); sh.lineTo(depth,H); sh.lineTo(depth,H-0.16); sh.lineTo(0.22,0); sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:Wd,bevelEnabled:false});
+  const X=new THREE.Vector3(ox,0,-oy), Z=new THREE.Vector3().crossVectors(X,UP), m=new THREE.Mesh(g,M.trim);
+  const base=wpos([p[0]+ux*u,p[1]+uy*u],z0).addScaledVector(Z,-Wd/2);
+  m.matrixAutoUpdate=false; m.matrix.makeBasis(X,UP,Z).setPosition(base); return put4(m,lv); }
+function alivaBands(P,BLD){
+  const R=P.ring_f2, front=[R[0],R[1]], side=[R[1],R[2]];
+  for(const [z,lv] of [[LV.f2,1],[LV.f3,2],[LV.f4,3],[LV.roof,4]]) for(const [p,q] of [front,side]){ band(p,q,z-0.07,0.26,0.12,lv); band(p,q,z+0.09,0.07,0.2,lv); }
+  // brackets under the 1.80 m projection (12 m street) and the 1.20 m one (6 m street), clear of the doors and windows
+  const zc=LV.f2-SLAB-0.75, A0=BLD[0], D0=BLD[1], C0=BLD[2];
+  for(const x of [-11.75,-10.15,-8.55,-6.95]) if(x<P.whdoor[0]-0.3||x>P.whdoor[1]+0.3) corbel(A0,D0,x-A0[0],0.95,zc,0);
+  for(const u of [0.6,2.9,6.4,7.9]) corbel(D0,C0,u,0.7,zc,0);
+}
+function alivaMansard(P){
+  const R=P.ring_f2, Hc=1.45, lean=0.5, th=Math.atan2(lean,Hc), Ls=Math.hypot(Hc,lean);
+  const edges=[[R[0],R[1]],[R[1],R[2]]];
+  const towards=(p,q,len)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]); return [p[0]+(q[0]-p[0])*len/L,p[1]+(q[1]-p[1])*len/L]; };
+  edges.unshift([towards(R[0],R[4],1.5),R[0]]);   // 1.5 m return on the left neighbour side
+  edges.push([R[2],towards(R[2],R[3],1.5)]);      // and on the back neighbour side
+  const slope=(p,q)=>{ const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,ix=-uy,iy=ux, rot=Math.atan2(dy,dx);
+    const c=[(p[0]+q[0])/2+ix*lean/2,(p[1]+q[1])/2+iy*lean/2]; const m=box(L+0.5,Ls,0.09,M.slate,c[0],-c[1],LV.roof+Hc/2,rot);
+    m.rotation.order='YXZ'; m.rotation.x=-th; put4(m,4);
+    const t=[(p[0]+q[0])/2+ix*lean,(p[1]+q[1])/2+iy*lean]; put4(box(L+0.5,0.1,0.22,M.trim,t[0],-t[1],LV.roof+Hc+0.05,rot),4); };
+  for(const [p,q] of edges) slope(p,q);
+  // dormers on the window axes, a round window in the middle of the 12 m front (like the Aliva roof)
+  const dormer=(p,q,u)=>{ const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,ix=-uy,iy=ux, rot=Math.atan2(dy,dx);
+    const at=(dep,z,w,h,d,mat)=>put4(box(w,h,d,mat,p[0]+ux*u+ix*dep,-(p[1]+uy*u+iy*dep),z,rot),4);
+    at(0.38,LV.roof+0.78,0.95,1.15,0.62,M.trim); at(0.055,LV.roof+0.8,0.5,0.72,0.02,M.glass); at(0.06,LV.roof+0.8,0.62,0.84,0.012,M.frame);
+    const sh=new THREE.Shape(); sh.moveTo(-0.6,0); sh.lineTo(0.6,0); sh.lineTo(0,0.42); sh.closePath(); const g=new THREE.ExtrudeGeometry(sh,{depth:0.66,bevelEnabled:false}); g.translate(0,0,-0.33);
+    const m=new THREE.Mesh(g,M.trim); m.position.set(p[0]+ux*u+ix*0.38,LV.roof+1.36,-(p[1]+uy*u+iy*0.38)); m.rotation.y=rot; put4(m,4); };
+  const roundWin=(p,q,u)=>{ const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,ix=-uy,iy=ux, rot=Math.atan2(dy,dx);
+    const c=[p[0]+ux*u+ix*(lean*0.5-0.06),p[1]+uy*u+iy*(lean*0.5-0.06)];
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.07,8,28),M.trim); ring.position.set(c[0],LV.roof+Hc*0.5,-c[1]); ring.rotation.order='YXZ'; ring.rotation.y=rot; ring.rotation.x=-th; put4(ring,4);
+    const gl=new THREE.Mesh(new THREE.CircleGeometry(0.32,24),M.glass); gl.position.copy(ring.position); gl.rotation.copy(ring.rotation); put4(gl,4); };
+  const [f0,f1]=[R[0],R[1]], fx=x=>x-f0[0];
+  for(const x of P.dormers_front||[-9.85,-3.75]) dormer(f0,f1,fx(x));
+  roundWin(f0,f1,fx(P.round_front??-6.8));
+  for(const o of P.right) dormer(R[1],R[2],P.right_off+(o.u0+o.u1)/2);
+}
+function balustrade(p,q,z,lv){
+  const L=Math.hypot(q[0]-p[0],q[1]-p[1]), rot=Math.atan2(q[1]-p[1],q[0]-p[0]), ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, c=[(p[0]+q[0])/2,(p[1]+q[1])/2];
+  put4(box(L,0.08,0.2,M.trim,c[0],-c[1],z+1.0,rot),lv); put4(box(L,0.1,0.16,M.trim,c[0],-c[1],z+0.08,rot),lv);
+  for(let u=0.12;u<=L-0.1;u+=0.16) put4(box(0.07,0.84,0.07,M.trim,p[0]+ux*u,-(p[1]+uy*u),z+0.55,rot),lv);
+  addCol(p,q,z,z+1.05);
 }
 function cp2(c,s,t){ return [c.P2[0]+c.U[0]*s+c.V[0]*t, c.P2[1]+c.U[1]*s+c.V[1]*t]; }
 function lvOf(z){ return z<LV.f2-0.01?0:z<LV.f3-0.01?1:z<LV.f4-0.01?2:z<LV.roof-0.01?3:4; }

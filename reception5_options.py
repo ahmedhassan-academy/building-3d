@@ -95,6 +95,7 @@ def make(op):
     p['front'] = [{'u0': x0 - G.A[0], 'u1': x1 - G.A[0], 'z0': 0.9, 'z1': 2.2, 'k': 'win', 'y': 4.05} for x0, x1 in op['front']] + [slide]
     p['right'] = [{'u0': side_u(y0), 'u1': side_u(y1), 'z0': 0.9, 'z1': 2.2, 'k': 'win'} for y0, y1 in op['side']]
     p['extra_labels'] = [{'t': t, 'x': x, 'y': y, 'rot': r} for t, x, y, r in op.get('extra', [])]
+    if op.get('f2_wins'): p['f2_wins'] = [list(w) for w in op['f2_wins']]
     p['title'] = op['title']; p['desc'] = op['sub']
     return p
 
@@ -145,7 +146,8 @@ OPTIONS.append(dict(
            ('نوم ٣', 'c-blue', [(-5.0, B_WALL), (rw(B_WALL), B_WALL), P1, B3TOP], (-2.6, 10.35), '٥.٧ × ٣.٣')],
     doors=[((-6.0, 9.15), DN, LF), ((-5.0, B_WALL - 0.05), DN, RT), ((-5.0, 11.4), DN, RT)],
     opens=[((-6.0, 9.2), (-5.0, 9.2))],
-    balc=B_BAL, front=[(-12.15, -11.35), (-7.55, -6.05), W_CORNER_F], side=[W_CORNER_S, W_RIGHT],
+    balc=B_BAL, front=[(-12.15, -11.35), (-7.55, -6.05), (-4.5, -3.0)], side=[W_CORNER_S, W_RIGHT],   # bed 2's window on the facade axes (7 Oct): balcony, bed 1, bed 2 every 3.05 m
+    f2_wins=[(-10.85, -8.85), (-7.8, -5.8), (-4.75, -2.75)],                       # warehouse floor-2 windows on the same axes
     notes=['شلنا نوم ١ اللي على الشمال ودخلناها في الصالة: الريسبشن بقى ماشي على حيطة الجار من البلكونة لحد المطبخ.',
            'البلكونة ٢.٥ × ١.٥ في الريسبشن على شارع ١٢، بابها ٢ م، وجنبها شباك صغير ٠.٨ م. نوم ١ ليها شباك ١.٥ م.',
            'نوم ٣ كبرت لـ ١٩ م² من نوم ٢ (الحيطة اللي بينهم نزلت ٥٥ سم)، والدخلة طالت لـ ١ × ١.٦ علشان باب نوم ٢.',

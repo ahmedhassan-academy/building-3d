@@ -418,7 +418,7 @@ def ring(F,plan,fl):
     if fl in (1,2):
         for u0,u1 in ((1.2,2.4),(3.4,4.6)): o.append(win(F,sh(upt(D2,C2,u0),ds),sh(upt(D2,C2,u1),ds)))
     if fl==2:
-        for x0,x1 in ((-11.2,-9.2),(-7.9,-5.9),(-4.6,-2.6)): o.append(win(F,(x0,4.05),(x1,4.05)))
+        for x0,x1 in plan.get('f2_wins') or ((-11.2,-9.2),(-7.9,-5.9),(-4.6,-2.6)): o.append(win(F,(x0,4.05),(x1,4.05)))
     if fl>=3:
         for op in plan['front']: o.append((win if op.get('k')=='win' else slide)(F,(A[0]+op['u0'],op.get('y',5.85)),(A[0]+op['u1'],op.get('y',5.85))))
         for op in plan['right']: o.append(win(F,sh(upt(D2,C2,op['u0']),ds),sh(upt(D2,C2,op['u1']),ds)))

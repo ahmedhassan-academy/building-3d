@@ -13,6 +13,7 @@ LABELS = {'r2': 'ريسبشن ٢', '3': 'ترشيح ٣', '2b': 'ترشيح ٢ب'
 def r2_plan():
     p = R.make(next(o for o in R.OPTIONS if o['key'] == 'B'))
     p['no_hoist'] = True                                  # his ask for this proposal: no hoist hatch
+    p['facade'] = 'aliva'                                 # his pick (7 Oct): the Aliva / Mountain View facade
     return p
 
 def for_3d(p, title):
