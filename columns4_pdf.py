@@ -180,7 +180,7 @@ def build():
              ('٤', 'ريسبشن ٤', R.make(next(o for o in R.OPTIONS if o['key'] == 'C'))),
              ('٦', 'ترشيح ٢', G.PLANS[2]),
              ('٧', 'ترشيح ٢ب', G.PLANS[7])]
-    N = 4 + len(plans)
+    N = 3 + len(plans)                                 # his ask (27 Oct): the raft page is out
     def page(i, title, sub, svg, extra='', cls='big'):
         return (f'<div class="page"><div class="hdr"><div><h1>{title}</h1><p class="sub">{sub}</p></div><div class="pg">صفحة {AR(i)} من {AR(N)}</div></div>'
                 f'<div class="{cls}">{svg}</div>{extra}</div>')
@@ -188,11 +188,10 @@ def build():
              'تحتها خرسانة عادية ٢٠ سم طالعة ٢٠ سم زيادة · شبكة حديد تحت وشبكة فوق (١٦ مم كل ٢٠ سم في الاتجاهين) وحديد زيادة فوق تحت العمدان · '
              'وشها التحتاني حوالي ١.٥٠ م تحت الأرض.</div>'
              '<p class="legend">المقاسات دي تقديرية. السمك والحديد والعمق النهائي بيحددهم المهندس الإنشائي بعد جسات وتقرير التربة.</p>')
-    pages = [page(1, 'اللبشة', 'تحت الدور الأول، ونفس العمدان', raft_svg(base), f'<div class="sect">{raft_section_svg()}</div>' + notes, 'mid'),
-             page(2, 'أماكن العمدان والمسافات', 'المسافة بين كل عمودين جنب بعض، وبُعد كل عمود عن الواجهة والجار', distances_svg(base), column_table(), 'cpos'),
-             page(3, 'الدور الأول: المخزن', 'نفس الدور في الأربع ترشيحات (١ و٤ و٦ و٧)', warehouse(base, 1)),
-             page(4, 'الدور الثاني: المخزن والبروز', 'نفس الدور في الأربع ترشيحات (١ و٤ و٦ و٧)', warehouse(base, 2))]
-    for j, (num, name, p) in enumerate(plans, 5):
+    pages = [page(1, 'أماكن العمدان والمسافات', 'المسافة بين كل عمودين جنب بعض، وبُعد كل عمود عن الواجهة والجار', distances_svg(base), column_table(), 'cpos'),
+             page(2, 'الدور الأول: المخزن', 'نفس الدور في الأربع ترشيحات (١ و٤ و٦ و٧)', warehouse(base, 1)),
+             page(3, 'الدور الثاني: المخزن والبروز', 'نفس الدور في الأربع ترشيحات (١ و٤ و٦ و٧)', warehouse(base, 2))]
+    for j, (num, name, p) in enumerate(plans, 4):
         pages.append(page(j, f'الدور الثالث: ترشيح رقم {num}', f'{name} · العمدان في نفس أماكن الدور الأول والتاني', flat(p)))
     css = G.CSS + '.sect svg{width:186mm;height:auto;display:block;margin:0 auto 1mm} .cpos svg{width:186mm;height:140mm;display:block;margin:0 auto 1mm} .ctab{font-size:3mm} .ctab td,.ctab th{padding:.7mm 1.6mm}'
     html = '<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>العمدان — الترشيحات ١ و٤ و٦ و٧</title><style>' + css + '</style></head><body>' + ''.join(pages) + '</body></html>'
