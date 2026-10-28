@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """His ask (28 Oct 2026): floor 1 of ترشيح ١ as on page 1 of ترشيح-رقم-١.pdf, but without the building's stair house
 and without the warehouse stair up to floor 2 (the whole floor open), and tell him its area.
-Then: the same floor 1 with both stairs, each stair's size and area written on it.
-python3 floor1_open.py         ->  2d/الدور-الأول-من-غير-سلالم.pdf
-python3 floor1_open.py stairs  ->  2d/الدور-الأول-بالسلمين.pdf"""
+Then: the same floor 1 with both stairs, each stair's size and area written on it; then the warehouse stair with 20 steps.
+python3 floor1_open.py            ->  2d/الدور-الأول-من-غير-سلالم.pdf
+python3 floor1_open.py stairs     ->  2d/الدور-الأول-بالسلمين.pdf
+python3 floor1_open.py stairs 20  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة.pdf"""
 import os, subprocess, sys
 import gen2d as G
 import columns4_pdf as C          # loading it puts the coloured columns, their legend and the hatch into gen2d
@@ -12,6 +13,12 @@ def stair_areas():
     """the stair house, and the warehouse stair's flight with its top landing (length, width, area)"""
     st = G.whst; L, W = st['s_bot'] - (st['s_top'] - 1.2), st['off1'] - st['off0']
     return G.area(G.CORE), L, W, L * W
+
+def set_steps(n):
+    """his ask (28 Oct): the warehouse stair with n steps up the same 3.75 m, same 27 cm tread, so it gets shorter;
+    its top (floor 2's arrival and stair opening) stays put and its foot comes forward"""
+    st = dict(G.whst); st['NR'] = n; st['s_bot'] = st['s_top'] + (n - 1) * st['tread']
+    G.whst = st
 
 def open_floor1(plan):
     """gen2d.wh_svg for floor 1 without core_svg, the flats' street door (it is the stair house's) and wh_stair"""
@@ -34,16 +41,21 @@ def stairs_floor1(plan):
     try: svg = G.wh_svg(plan, 1)
     finally: G.G_AREA = old
     F, st = G.FR, G.whst; om = (st['off0'] + st['off1']) / 2
+    if st['NR'] != 22:                                   # wh_stair writes the 22 x 17 cm of the stair as drawn till now
+        k = '٢٢ درجة × ١٧ سم'; assert svg.count(k) == 1
+        svg = svg.replace(k, f'{G.ar(st["NR"], 0)} درجة × {G.ar(st["rise"] / st["NR"] * 100, 2)} سم')
     labs = [G.text(F, f'مساحة بيت السلم: ٣ × ٥ = {G.ar(core, 0)} م²', *G.cp(2.5, -0.5), rot=G.rot_along(G.cp(0, 0), G.cp(5, 0))),   # outside its wall: the box itself is full of stair lines
             G.text(F, f'مساحة سلم المخزن: {G.ar(L, 2)} × {G.ar(W, 2)} ≈ {G.ar(ws, 1)} م²', *G.wp((st['s_bot'] + st['s_top']) / 2 - 0.4, st['off1'] + 0.95),
                    rot=G.rot_along(G.wp(st['s_bot'], om), G.wp(st['s_top'], om)))]
     return svg[:svg.rindex('</svg>')] + '\n'.join(labs) + '\n</svg>', free
 
-def build(kind='open'):
+def build(kind='open', steps=None):
+    if steps: set_steps(steps)
     core, L, W, ws = stair_areas()
     if kind == 'stairs':
         svg, free = stairs_floor1(G.PLANS[2])
         title, name, hname = 'الدور الأول: المخزن بالسلمين', 'الدور-الأول-بالسلمين', 'floor1_stairs.html'
+        if steps: name, hname = f'الدور-الأول-سلم-المخزن-{G.ar(steps, 0)}-درجة', f'floor1_stairs{steps}.html'
         sub = (f'ترشيح رقم ١ · الدور كله ≈ {G.ar(G.area(G.BLD) - G.area(G.DUCT), 0)} م²: بيت السلم {G.ar(core, 0)} م²، '
                f'سلم المخزن {G.ar(ws, 1)} م²، والفاضي ≈ {G.ar(free, 0)} م²')
     else:
@@ -64,4 +76,4 @@ def build(kind='open'):
           f'free {free:.2f} (duct {G.area(G.DUCT):.2f}); old label {G.G_AREA:.2f}')
 
 if __name__ == '__main__':
-    build('stairs' if 'stairs' in sys.argv[1:] else 'open')
+    build('stairs' if 'stairs' in sys.argv[1:] else 'open', next((int(a) for a in sys.argv[1:] if a.isdigit()), None))
