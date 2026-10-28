@@ -6,9 +6,11 @@ python3 floor1_open.py            ->  2d/الدور-الأول-من-غير-سل�
 python3 floor1_open.py stairs     ->  2d/الدور-الأول-بالسلمين.pdf
 python3 floor1_open.py stairs 20  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة.pdf
 python3 floor1_open.py stairs 20 cols  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-بعمودين.pdf (his pick: two small columns under it, then taken out)
-python3 floor1_open.py stairs 20 no8   ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-من-غير-عمود-٨.pdf (his ask: 7 and 8 too close, keep 7)"""
+python3 floor1_open.py stairs 20 no8   ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-من-غير-عمود-٨.pdf (his ask: 7 and 8 too close, keep 7)
+python3 floor1_open.py set  ->  2d/ترشيح-رقم-١-آخر-تصميم.pdf (floor 1 without and with stairs, floor 2, floor 3: the latest design)"""
 import copy, math, os, subprocess, sys
 import gen2d as G
+import reception5_options as R
 import columns4_pdf as C          # loading it puts the coloured columns, their legend and the hatch into gen2d
 
 def stair_areas():
@@ -102,15 +104,42 @@ def build(kind='open', steps=None, cols=False, no8=False):
     page = (f'<div class="page"><div class="hdr"><div><h1>{title}</h1>'
             f'<p class="sub">{sub}</p>{sub2}</div><div class="pg"></div></div>'
             f'<div class="big">{svg}</div></div>')
-    html = ('<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>' + title.replace(': ', ' — ') + '</title><style>'
-            + G.CSS + '</style></head><body>' + page + '</body></html>')
+    to_pdf(title.replace(': ', ' — '), [page], hname, name)
+    print(f'whole floor {G.area(G.BLD):.2f} m2; stair house {core:.2f}; warehouse stair + landing {L:.2f} x {W:.2f} = {ws:.2f}; '
+          f'free {free:.2f} (duct {G.area(G.DUCT):.2f}); old label {G.G_AREA:.2f}')
+
+def to_pdf(title, pages, hname, name):
+    html = ('<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>' + title + '</title><style>'
+            + G.CSS + '</style></head><body>' + ''.join(pages) + '</body></html>')
     hp = os.path.join(G.OUT, hname); open(hp, 'w', encoding='utf-8').write(html)
     pdf = os.path.join(G.OUT, name + '.pdf')
     subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '--headless=new', '--disable-gpu', '--no-sandbox',
                     '--no-pdf-header-footer', '--print-to-pdf=' + pdf, 'file://' + hp], capture_output=True, text=True, timeout=180)
     print('pdf', os.path.getsize(pdf) if os.path.exists(pdf) else 0)
-    print(f'whole floor {G.area(G.BLD):.2f} m2; stair house {core:.2f}; warehouse stair + landing {L:.2f} x {W:.2f} = {ws:.2f}; '
-          f'free {free:.2f} (duct {G.area(G.DUCT):.2f}); old label {G.G_AREA:.2f}')
+    return pdf
+
+def build_set():
+    """his ask (28 Oct): the latest design of ترشيح ١ in one PDF, nothing else: floor 1 with no stairs, floor 1 with its stairs,
+    floor 2, floor 3. Latest = 12 columns (no 8), the warehouse stair with 20 steps, no small columns under it"""
+    set_steps(20)
+    base, flat3 = without_8(G.PLANS[2]), without_8(R.make(next(o for o in R.OPTIONS if o['key'] == 'A')))
+    core, L, W, ws = stair_areas()
+    x9, x7 = C.ORDER[8], C.ORDER[6]
+    beam = (f'من غير عمود ٨: الكمرة اللي جاية من عمود ١٢ بتقعد على كمرة الحيطة اللي ورا، '
+            f'من ٩ لـ ٧ ({G.ar(math.hypot(x9[0] - x7[0], x9[1] - x7[1]), 2)} م)')
+    open_svg, _ = open_floor1(base)
+    stairs_svg, free = stairs_floor1(base)
+    rows = [('الدور الأول: المخزن من غير سلالم', 'ترشيح رقم ١ · من غير بيت السلم ومن غير سلم المخزن للدور التاني', beam, open_svg),
+            ('الدور الأول: المخزن بالسلمين', f'ترشيح رقم ١ · الدور كله ≈ {G.ar(G.area(G.BLD) - G.area(G.DUCT), 0)} م²: بيت السلم {G.ar(core, 0)} م²، '
+             f'سلم المخزن {G.ar(ws, 1)} م²، والفاضي ≈ {G.ar(free, 0)} م²', beam, stairs_svg),
+            ('الدور الثاني: المخزن والبروز', 'ترشيح رقم ١ · ريسبشن ١', beam, C.warehouse(base, 2)),
+            ('الدور الثالث: ترشيح رقم ١', 'ريسبشن ١ · العمدان في نفس أماكن الدور الأول والتاني', '١٢ عمود، من غير عمود ٨', C.flat(flat3))]
+    N = len(rows)
+    pages = [f'<div class="page"><div class="hdr"><div><h1>{t}</h1><p class="sub">{s}</p><p class="sub">{s2}</p></div>'
+             f'<div class="pg">صفحة {G.ar(i, 0)} من {G.ar(N, 0)}</div></div><div class="big">{svg}</div></div>'
+             for i, (t, s, s2, svg) in enumerate(rows, 1)]
+    return to_pdf('ترشيح رقم ١ — آخر تصميم', pages, 'plan1_latest.html', 'ترشيح-رقم-١-آخر-تصميم')
 
 if __name__ == '__main__':
-    build('stairs' if 'stairs' in sys.argv[1:] else 'open', next((int(a) for a in sys.argv[1:] if a.isdigit()), None), 'cols' in sys.argv[1:], 'no8' in sys.argv[1:])
+    if 'set' in sys.argv[1:]: build_set()
+    else: build('stairs' if 'stairs' in sys.argv[1:] else 'open', next((int(a) for a in sys.argv[1:] if a.isdigit()), None), 'cols' in sys.argv[1:], 'no8' in sys.argv[1:])
