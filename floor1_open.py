@@ -5,8 +5,9 @@ Then: the same floor 1 with both stairs, each stair's size and area written on i
 python3 floor1_open.py            ->  2d/الدور-الأول-من-غير-سلالم.pdf
 python3 floor1_open.py stairs     ->  2d/الدور-الأول-بالسلمين.pdf
 python3 floor1_open.py stairs 20  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة.pdf
-python3 floor1_open.py stairs 20 cols  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-بعمودين.pdf (his pick: two small columns under it)"""
-import math, os, subprocess, sys
+python3 floor1_open.py stairs 20 cols  ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-بعمودين.pdf (his pick: two small columns under it, then taken out)
+python3 floor1_open.py stairs 20 no8   ->  2d/الدور-الأول-سلم-المخزن-٢٠-درجة-من-غير-عمود-٨.pdf (his ask: 7 and 8 too close, keep 7)"""
+import copy, math, os, subprocess, sys
 import gen2d as G
 import columns4_pdf as C          # loading it puts the coloured columns, their legend and the hatch into gen2d
 
@@ -34,6 +35,14 @@ def stair_columns(F):
         o.append(f'<text x="{F.X(lx):.1f}" y="{F.Y(ly):.1f}" text-anchor="middle" dominant-baseline="central" '
                  f'style="fill:{col};font-size:13px;font-weight:800;stroke:#ffffff;stroke-width:3.5px;paint-order:stroke">{G.ar(n, 0)}</text>')
     return o
+
+def without_8(plan):
+    """his ask (28 Oct): columns 7 and 8 are only 2.27 m apart, make them one. 7 is the stair house's corner and stays;
+    8 goes, and the middle beam from 12 then sits on the back wall's beam from 9 to 7 (still drawn up to the wall)"""
+    p = copy.deepcopy(plan); x8, y8 = C.ORDER[7]
+    p['cols_out'] = [c for c in p['cols_out'] if math.hypot(c[0] - x8, c[1] - y8) > 0.01]
+    assert len(p['cols_out']) == len(plan['cols_out']) - 1
+    return p
 
 def open_floor1(plan):
     """gen2d.wh_svg for floor 1 without core_svg, the flats' street door (it is the stair house's) and wh_stair"""
@@ -68,17 +77,22 @@ def stairs_floor1(plan, cols=False):
     if cols: labs += stair_columns(F)
     return svg[:svg.rindex('</svg>')] + '\n'.join(labs) + '\n</svg>', free
 
-def build(kind='open', steps=None, cols=False):
+def build(kind='open', steps=None, cols=False, no8=False):
     if steps: set_steps(steps)
     core, L, W, ws = stair_areas()
     sub2 = ''
     if kind == 'stairs':
-        svg, free = stairs_floor1(G.PLANS[2], cols)
+        svg, free = stairs_floor1(without_8(G.PLANS[2]) if no8 else G.PLANS[2], cols)
         title, name, hname = 'الدور الأول: المخزن بالسلمين', 'الدور-الأول-بالسلمين', 'floor1_stairs.html'
         if steps: name, hname = f'الدور-الأول-سلم-المخزن-{G.ar(steps, 0)}-درجة', f'floor1_stairs{steps}.html'
         if cols:
             name, hname = name + '-بعمودين', hname.replace('.html', '_cols.html')
             sub2 = '<p class="sub">عمود ١٤ و١٥: عمودين صغيرين ٢٥ × ٢٥ سم تحت نص سلم المخزن، وفوقهم كمرة صغيرة</p>'
+        if no8:
+            name, hname = name + '-من-غير-عمود-٨', hname.replace('.html', '_no8.html')
+            x9, x7 = C.ORDER[8], C.ORDER[6]
+            sub2 += (f'<p class="sub">من غير عمود ٨: الكمرة اللي جاية من عمود ١٢ بتقعد على كمرة الحيطة اللي ورا، '
+                     f'من ٩ لـ ٧ ({G.ar(math.hypot(x9[0] - x7[0], x9[1] - x7[1]), 2)} م)</p>')
         sub = (f'ترشيح رقم ١ · الدور كله ≈ {G.ar(G.area(G.BLD) - G.area(G.DUCT), 0)} م²: بيت السلم {G.ar(core, 0)} م²، '
                f'سلم المخزن {G.ar(ws, 1)} م²، والفاضي ≈ {G.ar(free, 0)} م²')
     else:
@@ -99,4 +113,4 @@ def build(kind='open', steps=None, cols=False):
           f'free {free:.2f} (duct {G.area(G.DUCT):.2f}); old label {G.G_AREA:.2f}')
 
 if __name__ == '__main__':
-    build('stairs' if 'stairs' in sys.argv[1:] else 'open', next((int(a) for a in sys.argv[1:] if a.isdigit()), None), 'cols' in sys.argv[1:])
+    build('stairs' if 'stairs' in sys.argv[1:] else 'open', next((int(a) for a in sys.argv[1:] if a.isdigit()), None), 'cols' in sys.argv[1:], 'no8' in sys.argv[1:])
